@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TVS Lanka — Delivery &amp; Stock Dashboard</title>
+<style>
+  :root{
+    --navy-900:#0F2138;
+    --navy-700:#1B3A5C;
+    --navy-600:#26507C;
+    --bg:#EEF1F5;
+    --panel:#FFFFFF;
+    --steel:#5C7286;
+    --steel-light:#8CA0B3;
+    --line:#DCE2E8;
+    --amber:#D98E2B;
+    --amber-bg:#FBF0DD;
+    --green:#2F8F5B;
+    --green-bg:#E7F5EC;
+    --red:#C0392B;
+    --red-bg:#FBEAE7;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--navy-900);
+    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .num{ font-variant-numeric:tabular-nums; }
+
+  header{
+    background:var(--navy-900);
+    color:#fff;
+    padding:22px 28px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  header .title{
+    font-size:20px;
+    font-weight:650;
+    letter-spacing:0.2px;
+  }
+  header .subtitle{
+    color:#A9BBCC;
+    font-size:13px;
+    margin-top:2px;
+  }
+  .status{
+    display:flex;
+    align-items:center;
+    gap:18px;
+  }
+  .as-of{
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:6px;
+    padding:8px 14px;
+    font-size:13px;
+    color:#DCE6F0;
+  }
+  .as-of b{ color:#fff; }
+  .live-dot{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-size:12px;
+    color:#9FE3B6;
+  }
+  .live-dot .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:#3DDB7F;
+    box-shadow:0 0 0 0 rgba(61,219,127,0.6);
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(61,219,127,0.5); }
+    70%{ box-shadow:0 0 0 7px rgba(61,219,127,0); }
+    100%{ box-shadow:0 0 0 0 rgba(61,219,127,0); }
+  }
+
+  nav{
+    background:var(--navy-700);
+    display:flex;
+    gap:2px;
+    padding:0 24px;
+    overflow-x:auto;
+  }
+  nav button{
+    background:transparent;
+    border:none;
+    color:#B9CADA;
+    padding:14px 20px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    white-space:nowrap;
+  }
+  nav button.active{
+    color:#fff;
+    border-bottom-color:var(--amber);
+  }
+  nav button:hover{ color:#fff; }
+
+  main{
+    max-width:1180px;
+    margin:0 auto;
+    padding:26px 22px 60px;
+  }
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  h2.section-title{
+    font-size:15px;
+    font-weight:700;
+    color:var(--navy-900);
+    margin:28px 0 12px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  h2.section-title:first-child{ margin-top:0; }
+  .tag{
+    font-size:12px;
+    font-weight:600;
+    color:var(--steel);
+    background:var(--bg);
+    border:1px solid var(--line);
+    padding:3px 9px;
+    border-radius:20px;
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+  }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13.5px;
+  }
+  thead th{
+    text-align:left;
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--steel);
+    padding:10px 14px;
+    background:#F6F8FA;
+    border-bottom:1px solid var(--line);
+  }
+  thead th.num, td.num{ text-align:right; }
+  tbody td{
+    padding:9px 14px;
+    border-bottom:1px solid var(--line);
+    color:var(--navy-900);
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:#FAFBFC; }
+  .model-cell{ font-weight:600; }
+  .color-cell{ color:var(--steel); font-size:12.5px; }
+
+  .bar-track{
+    background:#EEF1F5;
+    border-radius:3px;
+    height:6px;
+    width:80px;
+    overflow:hidden;
+    display:inline-block;
+    vertical-align:middle;
+    margin-left:8px;
+  }
+  .bar-fill{
+    height:100%;
+    background:var(--green);
+    border-radius:3px;
+  }
+
+  /* shortage view */
+  .shortage-row{
+    display:grid;
+    grid-template-columns:190px 1fr 70px;
+    align-items:center;
+    gap:14px;
+    padding:10px 14px;
+    border-bottom:1px solid var(--line);
+  }
+  .shortage-row:last-child{ border-bottom:none; }
+  .shortage-label{ font-size:13.5px; }
+  .shortage-label .m{ font-weight:600; }
+  .shortage-label .c{ color:var(--steel); font-size:12px; display:block; }
+  .shortage-bar-track{
+    background:#F1EEE8;
+    border-radius:4px;
+    height:14px;
+    overflow:hidden;
+  }
+  .shortage-bar-fill{
+    height:100%;
+    border-radius:4px;
+  }
+  .shortage-qty{
+    text-align:right;
+    font-weight:700;
+    font-size:13.5px;
+  }
+
+  .empty{
+    padding:26px;
+    text-align:center;
+    color:var(--steel-light);
+    font-size:13.5px;
+  }
+
+  /* trend charts */
+  .trend-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+    gap:16px;
+  }
+  .trend-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:16px 18px 10px;
+  }
+  .trend-card h3{
+    font-size:13.5px;
+    margin:0 0 4px;
+    color:var(--navy-900);
+  }
+  .legend{
+    display:flex;
+    gap:14px;
+    font-size:11.5px;
+    color:var(--steel);
+    margin-bottom:6px;
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .legend i{ width:9px;height:9px;border-radius:2px;display:inline-block; }
+
+  footer{
+    text-align:center;
+    color:var(--steel-light);
+    font-size:12px;
+    padding:20px;
+  }
+
+  @media (max-width:640px){
+    header{ padding:16px 18px; }
+    main{ padding:18px 14px 40px; }
+    .shortage-row{ grid-template-columns:130px 1fr 56px; gap:8px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="title">TVS Lanka — Delivery &amp; Stock Dashboard</div>
+    <div class="subtitle">Horana Assembly Complex</div>
+  </div>
+  <div class="status">
+    <div class="as-of">As of <b id="asOfDate">—</b></div>
+    <div class="live-dot"><span class="dot"></span> Live</div>
+  </div>
+</header>
+
+<nav>
+  <button class="tab-btn active" data-view="status">Delivery Status</button>
+  <button class="tab-btn" data-view="shortage">Shortage</button>
+  <button class="tab-btn" data-view="trend">Trend</button>
+</nav>
+
+<main>
+
+  <section id="view-status" class="view active">
+    <div id="statusContainer"></div>
+  </section>
+
+  <section id="view-shortage" class="view">
+    <div id="shortageContainer"></div>
+  </section>
+
+  <section id="view-trend" class="view">
+    <h2 class="section-title">Delivered vs Plan vs Pending — last 14 days<span class="tag" id="trendRange"></span></h2>
+    <div class="trend-grid" id="trendContainer"></div>
+  </section>
+
+</main>
+
+<footer>Auto-refreshes every 5 minutes · Data source: Delivery &amp; Stock tracking pipeline</footer>
+
+<script>
+/* ------------------------------------------------------------------
+   Paste your Apps Script Web App URL below (ends in /exec).
+   See dashboard-webapp-snippet.gs for the code that serves this.
+------------------------------------------------------------------- */
+const WEBAPP_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
+
+const COLORS = {
+  delivered: "#2F8F5B",
+  plan: "#26507C",
+  pending: "#D98E2B"
+};
+
+function fmt(n){ return Number(n||0).toLocaleString(); }
+
+function groupBy(arr, key){
+  return arr.reduce((acc, item) => {
+    const k = item[key];
+    (acc[k] = acc[k] || []).push(item);
+    return acc;
+  }, {});
+}
+
+/* ---------------- Delivery Status ---------------- */
+function renderStatus(data){
+  const el = document.getElementById('statusContainer');
+  el.innerHTML = '';
+  if (!data.deliveryStatus || !data.deliveryStatus.length){
+    el.innerHTML = '<div class="panel"><div class="empty">No delivery status data for the latest day.</div></div>';
+    return;
+  }
+  const groups = groupBy(data.deliveryStatus, 'tab');
+  Object.keys(groups).forEach(tab => {
+    const rows = groups[tab].sort((a,b) => b.pending - a.pending);
+    const maxVal = Math.max(1, ...rows.map(r => Math.max(r.delivered, r.plan)));
+
+    const section = document.createElement('div');
+    section.innerHTML = `<h2 class="section-title">${tab}<span class="tag">${rows.length} lines</span></h2>`;
+
+    const panel = document.createElement('div');
+    panel.className = 'panel';
+    const table = document.createElement('table');
+    table.innerHTML = `
+      <thead><tr>
+        <th>Model</th><th>Color</th>
+        <th class="num">Delivered</th><th class="num">Plan</th><th class="num">Pending</th>
+      </tr></thead>
+      <tbody></tbody>`;
+    const tbody = table.querySelector('tbody');
+    rows.forEach(r => {
+      const pct = Math.round((r.delivered / maxVal) * 100);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="model-cell">${r.model}</td>
+        <td class="color-cell">${r.color}</td>
+        <td class="num">${fmt(r.delivered)}<span class="bar-track"><span class="bar-fill" style="width:${pct}%"></span></span></td>
+        <td class="num">${fmt(r.plan)}</td>
+        <td class="num">${fmt(r.pending)}</td>`;
+      tbody.appendChild(tr);
+    });
+    panel.appendChild(table);
+    section.appendChild(panel);
+    el.appendChild(section);
+  });
+}
+
+/* ---------------- Shortage ---------------- */
+function renderShortage(data){
+  const el = document.getElementById('shortageContainer');
+  el.innerHTML = '';
+  if (!data.shortage || !data.shortage.length){
+    el.innerHTML = '<div class="panel"><div class="empty">No stock shortages recorded for the latest day.</div></div>';
+    return;
+  }
+  const groups = groupBy(data.shortage, 'tab');
+  const maxQty = Math.max(...data.shortage.map(s => s.qty));
+
+  Object.keys(groups).forEach(tab => {
+    const rows = groups[tab];
+    const section = document.createElement('div');
+    section.innerHTML = `<h2 class="section-title">${tab}<span class="tag">${rows.length} short</span></h2>`;
+
+    const panel = document.createElement('div');
+    panel.className = 'panel';
+    rows.forEach(r => {
+      const pct = Math.max(6, Math.round((r.qty / maxQty) * 100));
+      const severity = r.qty >= maxQty * 0.66 ? '#C0392B' : (r.qty >= maxQty * 0.33 ? '#D98E2B' : '#E8B95F');
+      const row = document.createElement('div');
+      row.className = 'shortage-row';
+      row.innerHTML = `
+        <div class="shortage-label"><span class="m">${r.model}</span><span class="c">${r.color}</span></div>
+        <div class="shortage-bar-track"><div class="shortage-bar-fill" style="width:${pct}%;background:${severity}"></div></div>
+        <div class="shortage-qty">${fmt(r.qty)}</div>`;
+      panel.appendChild(row);
+    });
+    section.appendChild(panel);
+    el.appendChild(section);
+  });
+}
+
+/* ---------------- Trend (small SVG line charts) ---------------- */
+function buildSparkline(points, width, height, color){
+  if (!points.length) return '';
+  const max = Math.max(1, ...points);
+  const min = Math.min(0, ...points);
+  const range = (max - min) || 1;
+  const stepX = width / Math.max(1, points.length - 1);
+  const coords = points.map((v,i) => {
+    const x = i * stepX;
+    const y = height - ((v - min) / range) * height;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  return `<polyline fill="none" stroke="${color}" stroke-width="2" points="${coords.join(' ')}" />`;
+}
+
+function renderTrend(data){
+  const el = document.getElementById('trendContainer');
+  el.innerHTML = '';
+  const rangeTag = document.getElementById('trendRange');
+  if (!data.trend || !data.trend.length){
+    el.innerHTML = '<div class="panel"><div class="empty">Not enough trend history yet.</div></div>';
+    rangeTag.textContent = '';
+    return;
+  }
+  const dates = [...new Set(data.trend.map(t => t.date))];
+  rangeTag.textContent = `${dates[0]} → ${dates[dates.length-1]}`;
+
+  const groups = groupBy(data.trend, 'tab');
+  const W = 300, H = 90;
+
+  Object.keys(groups).forEach(tab => {
+    const rows = groups[tab];
+    const byDate = {};
+    rows.forEach(r => byDate[r.date] = r);
+    const delivered = dates.map(d => byDate[d] ? byDate[d].delivered : 0);
+    const plan = dates.map(d => byDate[d] ? byDate[d].plan : 0);
+    const pending = dates.map(d => byDate[d] ? byDate[d].pending : 0);
+
+    const card = document.createElement('div');
+    card.className = 'trend-card';
+    card.innerHTML = `
+      <h3>${tab}</h3>
+      <div class="legend">
+        <span><i style="background:${COLORS.delivered}"></i>Delivered</span>
+        <span><i style="background:${COLORS.plan}"></i>Plan</span>
+        <span><i style="background:${COLORS.pending}"></i>Pending</span>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">
+        ${buildSparkline(delivered, W, H, COLORS.delivered)}
+        ${buildSparkline(plan, W, H, COLORS.plan)}
+        ${buildSparkline(pending, W, H, COLORS.pending)}
+      </svg>`;
+    el.appendChild(card);
+  });
+}
+
+/* ---------------- Fetch + tabs ---------------- */
+async function loadData(){
+  try{
+    const res = await fetch(WEBAPP_URL, { cache: 'no-store' });
+    const data = await res.json();
+    document.getElementById('asOfDate').textContent = data.asOfDate || '—';
+    renderStatus(data);
+    renderShortage(data);
+    renderTrend(data);
+  }catch(err){
+    document.getElementById('statusContainer').innerHTML =
+      `<div class="panel"><div class="empty">Couldn't load data. Check the Web App URL in index.html.<br>${err}</div></div>`;
+  }
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-' + btn.dataset.view).classList.add('active');
+  });
+});
+
+loadData();
+setInterval(loadData, 5 * 60 * 1000);
+</script>
+
+</body>
+</html>
