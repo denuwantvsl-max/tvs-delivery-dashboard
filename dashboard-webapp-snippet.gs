@@ -1,7 +1,11 @@
 /**
  * TVS Lanka — Delivery & Stock Dashboard data feed
  * Paste this at the bottom of Code.gs in the "Stock Delivery Pipeline"
- * Apps Script project (the one bound to the tracking Sheet).
+ * Apps Script project.
+ *
+ * That project is STANDALONE (it reads reports from Gmail and opens the
+ * tracking Sheet by id), so this must use openById(TRACKING_SHEET_ID) --
+ * getActiveSpreadsheet() returns null outside a container-bound script.
  *
  * Then: Deploy → New deployment → Type: Web app
  *   Execute as: Me
@@ -13,8 +17,16 @@
  */
 
 function doGet(e) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName('Delivery Status Raw');
+  var ss = SpreadsheetApp.openById(TRACKING_SHEET_ID);
+  var tabName = (typeof DELIVERY_STATUS_OUTPUT_TAB !== 'undefined')
+    ? DELIVERY_STATUS_OUTPUT_TAB
+    : 'Delivery Status Raw';
+  var sheet = ss.getSheetByName(tabName);
+  if (!sheet) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ error: 'Tab not found: ' + tabName }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
   var data = sheet.getDataRange().getValues();
   var headers = data[0].map(function (h) { return String(h).trim(); });
   var idx = {};
