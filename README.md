@@ -118,7 +118,8 @@ instead. Per-category chapters are unaffected either way.
 | File | Purpose |
 | --- | --- |
 | `index.html` | The entire dashboard — markup, styles, engine |
-| `dashboard-webapp-snippet.gs` | Reference copy of the `doGet()` served by Apps Script |
+| `Code.gs` | **Canonical** full Apps Script pipeline, including `doGet()`. Paste this whole file into the Apps Script project. |
+| `dashboard-webapp-snippet.gs` | Superseded feed-only excerpt, kept for reference |
 | `_previous-version.html.bak` | The plain tabbed dashboard this replaced |
 
 ---
