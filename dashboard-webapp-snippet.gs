@@ -34,16 +34,31 @@ function doGet(e) {
 
   var rows = data.slice(1).filter(function (r) { return r[idx['Date']]; });
 
-  function parseDate(s) {
-    var p = String(s).split('/');
-    return new Date(p[2], p[1] - 1, p[0]);
+  /* The Date column holds a MIX of types: most rows are dd/MM/yyyy text, but
+     some are real spreadsheet Date cells. String() turns those into
+     "Thu Jul 09 2026 00:00:00 GMT+0530 (...)", which parseDate cannot split on
+     "/" -- the sort then compares NaN, ordering collapses, and the wrong day is
+     chosen as latest. Normalise every date to dd/MM/yyyy before doing anything. */
+  function normDate(v) {
+    if (Object.prototype.toString.call(v) === '[object Date]' && !isNaN(v.getTime())) {
+      return Utilities.formatDate(v, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+    }
+    return String(v).trim();
   }
 
-  var uniqueDates = Array.from(new Set(rows.map(function (r) { return String(r[idx['Date']]); })));
+  function parseDate(s) {
+    var p = String(s).split('/');
+    if (p.length !== 3) return null;
+    var d = new Date(Number(p[2]), Number(p[1]) - 1, Number(p[0]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  var uniqueDates = Array.from(new Set(rows.map(function (r) { return normDate(r[idx['Date']]); })));
+  uniqueDates = uniqueDates.filter(function (s) { return parseDate(s) !== null; });
   uniqueDates.sort(function (a, b) { return parseDate(a) - parseDate(b); });
   var asOfDate = uniqueDates[uniqueDates.length - 1];
 
-  var latestRows = rows.filter(function (r) { return String(r[idx['Date']]) === asOfDate; });
+  var latestRows = rows.filter(function (r) { return normDate(r[idx['Date']]) === asOfDate; });
   var statusMetrics = ['Delivered Qty', 'Delivery Plan', 'Pending Delivery'];
 
   // ---- Delivery status: latest day, by Tab/Model/Color ----
@@ -73,7 +88,7 @@ function doGet(e) {
   var last14 = uniqueDates.slice(-14);
   var trendMap = {};
   rows.forEach(function (r) {
-    var d = String(r[idx['Date']]);
+    var d = normDate(r[idx['Date']]);
     if (last14.indexOf(d) === -1) return;
     var metric = String(r[idx['Metric']]).trim();
     if (statusMetrics.indexOf(metric) === -1) return;
