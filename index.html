@@ -327,6 +327,51 @@ footer{ border-top:1px solid var(--line); margin-top:var(--s6); padding-block:va
 footer .wrap{ display:flex; gap:var(--s4); flex-wrap:wrap; justify-content:space-between;
   font-size:11px; color:var(--text-mute); }
 
+/* ---------- status matrix (mirrors the daily delivery email) ---------- */
+.mxwrap{ overflow:auto; max-height:calc(100vh - 300px); }
+table.matrix{ border-collapse:separate; border-spacing:0; font-size:12px; width:auto; min-width:100%; }
+table.matrix th, table.matrix td{
+  border-right:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft);
+  padding:4px 8px; white-space:nowrap; height:26px;
+}
+table.matrix thead th{
+  position:sticky; z-index:3; background:var(--surface-2);
+  font-size:9.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  text-align:center; color:var(--text-dim);
+}
+table.matrix thead tr:first-child th{ top:0; }
+table.matrix thead tr:nth-child(2) th{ top:26px; }
+table.matrix thead tr:first-child th.grp{ color:var(--text); border-bottom:1px solid var(--line); }
+table.matrix .mcol{
+  position:sticky; left:0; z-index:4; background:var(--surface);
+  text-align:left; min-width:212px; box-shadow:1px 0 0 var(--line);
+}
+table.matrix thead .mcol{ z-index:6; background:var(--surface-2); }
+table.matrix tbody th.mcol{ font-size:11.5px; font-weight:600; color:var(--text); }
+table.matrix tbody th.mcol small{ display:block; font-weight:500; font-size:10px; color:var(--text-mute); }
+table.matrix td{
+  text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums;
+  position:relative; color:var(--text);
+}
+table.matrix td .hm{ position:absolute; inset:0; background:var(--hc); opacity:var(--h,0); pointer-events:none; }
+table.matrix td span{ position:relative; z-index:1; }
+table.matrix td.zero{ color:var(--text-mute); }
+table.matrix td.neg span{ color:var(--bad); font-weight:700; }
+table.matrix td.tot{ font-weight:700; background:var(--surface-2); }
+table.matrix td.gt, table.matrix thead th.gt{
+  font-weight:700; background:var(--raise); border-left:2px solid var(--line);
+}
+table.matrix .gsep{ border-left:2px solid var(--line); }
+table.matrix tbody tr:hover th.mcol{ color:var(--brand); }
+table.matrix tbody tr.hl th.mcol,
+table.matrix tbody tr.hl td.tot{ color:var(--text); }
+table.matrix tbody tr.hl th.mcol{ border-left:2px solid var(--brand); }
+.mxlegend{ display:flex; gap:var(--s4); flex-wrap:wrap; align-items:center;
+  padding:var(--s2) var(--s4); border-top:1px solid var(--line); font-size:10.5px; color:var(--text-mute); }
+.mxlegend span{ display:inline-flex; align-items:center; gap:6px; }
+.mxlegend i{ width:22px; height:9px; border-radius:2px; display:inline-block;
+  background:linear-gradient(90deg,transparent,var(--c)); border:1px solid var(--line); }
+
 /* ---------- responsive: 1440 / 1024 / 768 / 375 ---------- */
 @media (max-width:1180px){
   .board{ grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -339,6 +384,8 @@ footer .wrap{ display:flex; gap:var(--s4); flex-wrap:wrap; justify-content:space
   .brand span{ display:none; }
   .top-in{ gap:var(--s3); }
   thead th{ position:static; }
+  .mxwrap{ max-height:none; }
+  table.matrix .mcol{ min-width:150px; }
   .srow{ grid-template-columns:minmax(90px,1fr) minmax(0,1.5fr) 52px; gap:var(--s2); }
 }
 @media (max-width:420px){
@@ -411,7 +458,8 @@ try{ var _t = localStorage.getItem("tvs-board-theme");
 
 <nav class="nav" aria-label="Board sections">
   <div class="wrap nav-in" role="tablist">
-    <button class="tab" role="tab" id="tab-overview" aria-selected="true"  aria-controls="v-overview" data-v="overview">Overview</button>
+    <button class="tab" role="tab" id="tab-matrix"   aria-selected="true"  aria-controls="v-matrix"   data-v="matrix">Status Matrix</button>
+    <button class="tab" role="tab" id="tab-overview" aria-selected="false" aria-controls="v-overview" data-v="overview">Overview</button>
     <button class="tab" role="tab" id="tab-delivery" aria-selected="false" aria-controls="v-delivery" data-v="delivery">Delivery Status</button>
     <button class="tab" role="tab" id="tab-shortage" aria-selected="false" aria-controls="v-shortage" data-v="shortage">Shortage <span class="cnt" id="shortCnt">0</span></button>
     <button class="tab" role="tab" id="tab-trend"    aria-selected="false" aria-controls="v-trend"    data-v="trend">14-Day Trend</button>
@@ -424,6 +472,30 @@ try{ var _t = localStorage.getItem("tvs-board-theme");
     <h3>Loading plant data…</h3>
     <p>Reading the latest recorded day from the Delivery Status pipeline.</p>
   </div></div>
+
+  <!-- ============ STATUS MATRIX ============ -->
+  <section class="view" id="v-matrix" role="tabpanel" aria-labelledby="tab-matrix" hidden>
+    <div class="kpis" id="mxKpis"></div>
+    <div class="panel">
+      <div class="panel-hd">
+        <h2>Status matrix</h2>
+        <span class="sub" id="mxSub"></span>
+        <div class="right controls">
+          <div class="seg" id="mxSeg" role="group" aria-label="Select workbook tab"></div>
+        </div>
+      </div>
+      <div class="panel-bd flush">
+        <div class="mxwrap" id="mxTable"></div>
+        <div class="mxlegend">
+          <span>Cell shading shows size within each row</span>
+          <span><i style="--c:var(--ok)"></i>Delivered / available</span>
+          <span><i style="--c:var(--brand)"></i>Planned / requested</span>
+          <span><i style="--c:var(--warn)"></i>Pending / unfinished</span>
+          <span><i style="--c:var(--bad)"></i>Short / negative</span>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- ============ OVERVIEW ============ -->
   <section class="view" id="v-overview" role="tabpanel" aria-labelledby="tab-overview" hidden>
@@ -718,6 +790,7 @@ function buildSeg(host, opts, current, onPick){
 /* ---------------- view state ---------------- */
 let LAST = null;
 const S = {
+  mx:  { line:"" },
   del: { line:"All", q:"", sort:{ key:"pending", dir:-1, redraw:() => renderDelivery() } },
   sh:  { line:"All",        sort:{ key:"qty",     dir:-1, redraw:() => renderShortage() } },
   tr:  { line:"All", series:{ delivered:true, plan:true, pending:false } }
@@ -736,7 +809,7 @@ function trendByDate(trend, line){
 }
 
 /* ---------------- overview ---------------- */
-function renderOverview(d){
+function kpiStripHTML(d){
   const ds = d.deliveryStatus || [], sh = d.shortage || [];
   const del = sum(ds, "delivered"), plan = sum(ds, "plan"), pend = sum(ds, "pending");
   const att = pct(del, plan);
@@ -753,13 +826,18 @@ function renderOverview(d){
   }
   const attCls = att === null ? "" : att >= CONFIG.BAND_OK ? "ok" : att >= CONFIG.BAND_WARN ? "warn" : "bad";
 
-  $("kpis").innerHTML =
-    kpi("Delivered", fmt(del), deltaHTML, attCls === "bad" ? "bad" : "ok") +
+  return kpi("Delivered", fmt(del), deltaHTML, attCls === "bad" ? "bad" : "ok") +
     kpi("Plan attainment", att === null ? "—" : Math.round(att * 100) + "%",
         fmt(del) + " of " + fmt(plan) + " planned", attCls) +
     kpi("Pending delivery", fmt(pend), "awaiting despatch", pend > 0 ? "warn" : "ok") +
     kpi("Units short of stock", fmt(shUnits), sh.length + " line" + (sh.length === 1 ? "" : "s") + " affected",
         sh.length ? "bad" : "ok");
+}
+
+function renderOverview(d){
+  const ds = d.deliveryStatus || [], sh = d.shortage || [];
+  const hist = trendByDate(d.trend, "All");
+  $("kpis").innerHTML = kpiStripHTML(d);
 
   /* per-line cards */
   const ls = lines(ds);
@@ -934,6 +1012,119 @@ function renderTrend(){
   ], hist.slice().reverse(), st);
 }
 
+
+/* ---------------- status matrix ----------------
+   Reproduces the layout of the daily delivery email: model groups across as
+   column blocks with their colours beneath, metrics down the side, a Total per
+   model and a Grand total. Cell shading is scaled within each row so volume and
+   problem areas can be scanned without reading every figure. */
+const METRIC_HUE = {
+  "Delivered Qty":"var(--ok)",
+  "Finished Stock Available for Delivery":"var(--ok)",
+  "Balanced Stock for New Orders":"var(--ok)",
+  "Delivery Plan":"var(--brand)",
+  "Weekly Requested Quantities":"var(--brand)",
+  "Weekly Received Quantities":"var(--brand)",
+  "Pending Delivery":"var(--warn)",
+  "Unfinished Stock Delivery Orders":"var(--warn)",
+  "Balanced Stock (Not Assembled)":"var(--warn)",
+  "Stock N/A for Delivery Orders":"var(--bad)",
+  "Variance with Weekly Requested Quantities":"var(--bad)"
+};
+const KEY_ROWS = ["Delivered Qty","Delivery Plan","Pending Delivery","Stock N/A for Delivery Orders"];
+const SEP = "|~|";
+
+/* Feeds published before doGet emitted `matrix` only carry four metrics.
+   Rebuild those so the board still works against an older deployment. */
+function synthMatrix(d){
+  const out = [];
+  (d.deliveryStatus || []).forEach(r => {
+    out.push({ tab:r.tab, model:r.model, color:r.color, metric:"Delivered Qty",    value:r.delivered });
+    out.push({ tab:r.tab, model:r.model, color:r.color, metric:"Delivery Plan",    value:r.plan });
+    out.push({ tab:r.tab, model:r.model, color:r.color, metric:"Pending Delivery", value:r.pending });
+  });
+  (d.shortage || []).forEach(r =>
+    out.push({ tab:r.tab, model:r.model, color:r.color, metric:"Stock N/A for Delivery Orders", value:r.qty }));
+  return out;
+}
+
+function renderMatrix(){
+  const d = LAST; if (!d) return;
+  $("mxKpis").innerHTML = kpiStripHTML(d);
+
+  const src = (d.matrix && d.matrix.length) ? d.matrix : synthMatrix(d);
+  const ls = lines(src);
+  if (!ls.length){
+    $("mxTable").innerHTML = '<div class="empty">No data recorded for the latest day.</div>';
+    $("mxSub").textContent = "";
+    return;
+  }
+  if (ls.indexOf(S.mx.line) === -1) S.mx.line = ls[0];
+  buildSeg($("mxSeg"), ls, S.mx.line, v => { S.mx.line = v; renderMatrix(); });
+
+  const rows = src.filter(r => String(r.tab) === S.mx.line);
+
+  /* Keep the sheet's own model and colour order - it matches the email. */
+  const models = [], colsOf = {}, val = {}, present = [];
+  rows.forEach(r => {
+    const m = String(r.model), c = String(r.color);
+    if (models.indexOf(m) === -1){ models.push(m); colsOf[m] = []; }
+    if (colsOf[m].indexOf(c) === -1) colsOf[m].push(c);
+    if (present.indexOf(r.metric) === -1) present.push(r.metric);
+    val[r.metric + SEP + m + SEP + c] = Number(r.value) || 0;
+  });
+
+  const order = (d.metricOrder || []).filter(m => present.indexOf(m) !== -1);
+  present.forEach(m => { if (order.indexOf(m) === -1) order.push(m); });
+
+  const get = (mt, m, c) => val[mt + SEP + m + SEP + c] || 0;
+  const modelTotal = (mt, m) => colsOf[m].reduce((a, c) => a + get(mt, m, c), 0);
+  const grandTotal = mt => models.reduce((a, m) => a + modelTotal(mt, m), 0);
+
+  let h1 = '<th class="mcol" rowspan="2">Metric</th>', h2 = "";
+  models.forEach((m, mi) => {
+    h1 += '<th class="grp' + (mi ? " gsep" : "") + '" colspan="' + (colsOf[m].length + 1) + '">' + esc(m) + '</th>';
+    colsOf[m].forEach((c, ci) => { h2 += '<th class="' + (ci === 0 && mi ? "gsep" : "") + '">' + esc(c) + '</th>'; });
+    h2 += '<th class="tot">Total</th>';
+  });
+  h1 += '<th class="gt" rowspan="2">Grand<br>total</th>';
+
+  let body = "";
+  order.forEach(mt => {
+    const hue = METRIC_HUE[mt] || "var(--brand)";
+    let peak = 0;
+    models.forEach(m => colsOf[m].forEach(c => {
+      const v = Math.abs(get(mt, m, c)); if (v > peak) peak = v;
+    }));
+    function cell(v, cls, gsep){
+      const heat = peak > 0 ? Math.min(1, Math.abs(v) / peak) : 0;
+      const k = ["" + (cls || ""), v === 0 ? "zero" : "", v < 0 ? "neg" : "", gsep ? "gsep" : ""]
+        .filter(Boolean).join(" ");
+      return '<td class="' + k + '" style="--hc:' + hue + ';--h:' +
+             (v === 0 ? "0" : (0.06 + heat * 0.34).toFixed(3)) + '">' +
+             '<i class="hm"></i><span>' + (v === 0 ? "&ndash;" : fmt(v)) + '</span></td>';
+    }
+    let tr = '<tr' + (KEY_ROWS.indexOf(mt) !== -1 ? ' class="hl"' : "") + '>' +
+             '<th class="mcol" scope="row">' + esc(mt) + '</th>';
+    models.forEach((m, mi) => {
+      colsOf[m].forEach((c, ci) => { tr += cell(get(mt, m, c), "", ci === 0 && mi > 0); });
+      tr += cell(modelTotal(mt, m), "tot");
+    });
+    tr += cell(grandTotal(mt), "gt");
+    body += tr + '</tr>';
+  });
+
+  const nCols = models.reduce((a, m) => a + colsOf[m].length, 0);
+  /* textContent does not decode entities - use the real character. */
+  $("mxSub").textContent = models.length + " models · " + nCols + " colours · " +
+    order.length + " metric" + (order.length === 1 ? "" : "s");
+  if (!d.matrix || !d.matrix.length){
+    $("mxSub").textContent += "  (limited set - redeploy Code.gs for all metrics)";
+  }
+  $("mxTable").innerHTML = '<table class="matrix"><thead><tr>' + h1 + '</tr><tr>' + h2 +
+    '</tr></thead><tbody>' + body + '</tbody></table>';
+}
+
 /* ---------------- master render ---------------- */
 function render(d){
   LAST = d;
@@ -943,6 +1134,7 @@ function render(d){
   sc.textContent = (d.shortage || []).length;
   sc.className = "cnt" + ((d.shortage || []).length ? " alert" : "");
   $("stamp").textContent = d.generatedAt ? "Feed generated " + new Date(d.generatedAt).toLocaleString() : "";
+  renderMatrix();
   renderOverview(d);
   renderDelivery();
   renderShortage();
@@ -951,7 +1143,7 @@ function render(d){
 
 /* ---------------- tabs ---------------- */
 const TABS = Array.prototype.slice.call(document.querySelectorAll(".tab"));
-let current = "overview";
+let current = "matrix";
 function show(v, focus){
   current = v;
   TABS.forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === v)));
@@ -1020,7 +1212,7 @@ try {
   const t = localStorage.getItem(THEME_KEY);
   if (t) document.documentElement.setAttribute("data-theme", t);
 } catch (e) {}
-show("overview");
+show("matrix");
 load();
 setInterval(load, CONFIG.REFRESH_MS);
 </script>

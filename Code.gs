@@ -28,6 +28,23 @@ const DAILY_WINDOW_DAYS = 2;
 const DELIVERY_STATUS_TABS = ['Summary', 'IQUBE', '3W'];
 const REPORT_TZ = 'Asia/Colombo';
 
+/* Row order of the source workbook, so the dashboard matrix reads in the same
+   sequence the team already knows from the daily delivery email. Any metric the
+   parser sees that is not listed here is appended after these, never dropped. */
+const METRIC_ORDER = [
+  'Weekly Requested Quantities',
+  'Weekly Received Quantities',
+  'Delivered Qty',
+  'Delivery Plan',
+  'Pending Delivery',
+  'Finished Stock Available for Delivery',
+  'Unfinished Stock Delivery Orders',
+  'Stock N/A for Delivery Orders',
+  'Balanced Stock for New Orders',
+  'Balanced Stock (Not Assembled)',
+  'Variance with Weekly Requested Quantities'
+];
+
 // ============================================================================
 // ENTRY POINTS
 // ============================================================================
@@ -721,8 +738,24 @@ function doGet(e) {
     .map(function (k) { return trendMap[k]; })
     .sort(function (a, b) { return parseDate(a.date) - parseDate(b.date); });
 
+  /* ---- Full metric matrix for the latest day ----
+     The pipeline already writes every metric row to the sheet; previously
+     doGet surfaced only three of them plus the shortage row. The dashboard
+     needs all of them to reproduce the workbook layout. */
+  var matrix = latestRows.map(function (r) {
+    return {
+      tab: r[idx['Tab']],
+      model: r[idx['Model']],
+      color: r[idx['Color']],
+      metric: String(r[idx['Metric']]).trim(),
+      value: Number(r[idx['Value']]) || 0
+    };
+  });
+
   var payload = {
     asOfDate: asOfDate,
+    metricOrder: METRIC_ORDER,
+    matrix: matrix,
     generatedAt: new Date().toISOString(),
     deliveryStatus: deliveryStatus,
     shortage: shortage,
