@@ -809,26 +809,57 @@ function trendByDate(trend, line){
 }
 
 /* ---------------- overview ---------------- */
+/* The workbook carries TWO different dates in one sheet, e.g. in the report
+   headed "As at 08/09/2026":
+       "Delivered Qty - 07/09/2026"  <- actual for the PREVIOUS working day
+       "Delivery Plan - 08/09/2026"  <- plan for the as-at day
+   Dividing one by the other compares different days and means nothing. True
+   attainment pairs a day's plan with the delivered figure reported the day
+   after, which is exactly what consecutive rows of the trend series hold. */
+function reportDates(d){
+  const hist = trendByDate(d.trend, "All");
+  const n = hist.length;
+  return {
+    hist: hist,
+    planFor: d.asOfDate || (n ? hist[n - 1].date : null),
+    deliveredFor: n > 1 ? hist[n - 2].date : null
+  };
+}
+
+/* Whole days between the report's as-at date and today. 0 = current. */
+function daysBehind(asOf){
+  const p = String(asOf || "").split("/");
+  if (p.length !== 3) return null;
+  const d0 = new Date(+p[2], +p[1] - 1, +p[0]);
+  if (isNaN(d0.getTime())) return null;
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  return Math.round((now - d0) / 86400000);
+}
+
 function kpiStripHTML(d){
   const ds = d.deliveryStatus || [], sh = d.shortage || [];
   const del = sum(ds, "delivered"), plan = sum(ds, "plan"), pend = sum(ds, "pending");
-  const att = pct(del, plan);
   const shUnits = sum(sh, "qty");
+  const R = reportDates(d), hist = R.hist, n = hist.length;
 
-  const hist = trendByDate(d.trend, "All");
-  const prev = hist.length > 1 ? hist[hist.length - 2].delivered : null;
-  let deltaHTML = '<span class="delta flat">no prior day</span>';
-  if (prev !== null){
-    const diff = del - prev;
+  let deltaHTML = '<span class="delta flat">no prior report</span>';
+  if (n > 1){
+    const diff = del - hist[n - 2].delivered;
     const cls = diff > 0 ? "up" : diff < 0 ? "down" : "flat";
-    const sign = diff > 0 ? "+" : "";
-    deltaHTML = '<span class="delta ' + cls + '">' + sign + fmt(diff) + '</span> vs previous day';
+    deltaHTML = '<span class="delta ' + cls + '">' + (diff > 0 ? "+" : "") + fmt(diff) +
+                '</span> vs previous report';
   }
-  const attCls = att === null ? "" : att >= CONFIG.BAND_OK ? "ok" : att >= CONFIG.BAND_WARN ? "warn" : "bad";
 
-  return kpi("Delivered", fmt(del), deltaHTML, attCls === "bad" ? "bad" : "ok") +
-    kpi("Plan attainment", att === null ? "—" : Math.round(att * 100) + "%",
-        fmt(del) + " of " + fmt(plan) + " planned", attCls) +
+  const priorPlan = n > 1 ? hist[n - 2].plan : 0;
+  const att = priorPlan > 0 ? del / priorPlan : null;
+  const attCls = att === null ? "" : att >= CONFIG.BAND_OK ? "ok" : att >= CONFIG.BAND_WARN ? "warn" : "bad";
+  const forD = R.deliveredFor ? " \u00B7 " + R.deliveredFor : "";
+
+  return kpi("Delivered" + forD, fmt(del), deltaHTML, "ok") +
+    kpi("Attainment" + forD, att === null ? "—" : Math.round(att * 100) + "%",
+        att === null ? "no plan recorded for that day"
+                     : fmt(del) + " against " + fmt(priorPlan) + " planned", attCls) +
+    kpi("Plan" + (R.planFor ? " \u00B7 " + R.planFor : ""), fmt(plan), "scheduled for despatch", "") +
     kpi("Pending delivery", fmt(pend), "awaiting despatch", pend > 0 ? "warn" : "ok") +
     kpi("Units short of stock", fmt(shUnits), sh.length + " line" + (sh.length === 1 ? "" : "s") + " affected",
         sh.length ? "bad" : "ok");
@@ -1064,6 +1095,11 @@ function renderMatrix(){
 
   const rows = src.filter(r => String(r.tab) === S.mx.line);
 
+  /* Spell out which day each of the two dated rows actually refers to. */
+  const RD = reportDates(d), MDATE = {};
+  if (RD.deliveredFor) MDATE["Delivered Qty"] = "actual for " + RD.deliveredFor;
+  if (RD.planFor) MDATE["Delivery Plan"] = "planned for " + RD.planFor;
+
   /* Keep the sheet's own model and colour order - it matches the email. */
   const models = [], colsOf = {}, val = {}, present = [];
   rows.forEach(r => {
@@ -1105,7 +1141,8 @@ function renderMatrix(){
              '<i class="hm"></i><span>' + (v === 0 ? "&ndash;" : fmt(v)) + '</span></td>';
     }
     let tr = '<tr' + (KEY_ROWS.indexOf(mt) !== -1 ? ' class="hl"' : "") + '>' +
-             '<th class="mcol" scope="row">' + esc(mt) + '</th>';
+             '<th class="mcol" scope="row">' + esc(mt) +
+             (MDATE[mt] ? '<small>' + esc(MDATE[mt]) + '</small>' : "") + '</th>';
     models.forEach((m, mi) => {
       colsOf[m].forEach((c, ci) => { tr += cell(get(mt, m, c), "", ci === 0 && mi > 0); });
       tr += cell(modelTotal(mt, m), "tot");
@@ -1193,7 +1230,12 @@ async function load(manual){
     if (!res.ok) throw new Error("HTTP " + res.status);
     const d = await res.json();
     if (d.error) throw new Error(d.error);
-    setLive("ok", "Live");
+    const behind = daysBehind(d.asOfDate);
+    if (behind !== null && behind > 0){
+      setLive("warn", behind + (behind === 1 ? " day" : " days") + " behind");
+    } else {
+      setLive("ok", "Live");
+    }
     const s = JSON.stringify([d.asOfDate, d.deliveryStatus, d.shortage, d.trend]);
     if (s !== sig){ sig = s; render(d); }
   } catch (err){

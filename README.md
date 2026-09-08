@@ -60,6 +60,23 @@ critical is visible without scrolling, then four views for drill-down.
 | **Shortage** | Shortage KPIs, ranked bars by units short, full register with share-of-total |
 | **14-Day Trend** | Delivered / plan / pending over time, per line or combined, with a daily history table |
 
+### The two-date reporting convention
+
+Each report carries **two different dates in one sheet**:
+
+```
+As at 08/09/2026
+  Delivered Qty - 07/09/2026   <- actual for the PREVIOUS working day
+  Delivery Plan - 08/09/2026   <- plan for the as-at day
+```
+
+Dividing one by the other compares different days. The board therefore pairs a
+day's plan with the delivered figure reported the day *after* it, and labels
+every KPI with the day it actually belongs to (`Delivered · 07/09/2026`,
+`Plan · 08/09/2026`). The matrix annotates the two dated rows for the same
+reason. The pipeline strips the date suffix when normalising metric names, so
+the pairing is reconstructed from consecutive rows of the trend series.
+
 ### Interaction
 
 - **Sorting** — click (or Enter/Space on) any sortable column header.
@@ -68,6 +85,7 @@ critical is visible without scrolling, then four views for drill-down.
 - **Theme** — light/dark toggle, remembered per browser. Dark is the default (suits a wall display); light is there for daylight desk use.
 - **Tabs** — ARIA tablist with left/right arrow navigation.
 - **Refresh** — every 5 minutes automatically, or the refresh button. The page only re-renders when the payload actually changed.
+- **Stale data** — the status chip turns amber and reads "N days behind" whenever the report's as-at date is older than today, so a missed email is visible rather than silently showing old figures as current.
 
 ### Design notes
 
