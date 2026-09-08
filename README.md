@@ -65,19 +65,25 @@ reads **Demo data** so it can never be mistaken for the real feed.
 | `REFRESH_MS` | `300000` | Background refresh interval (5 min) |
 | `CATEGORY_ORDER` | `["Summary","IQUBE","3W"]` | Order chapters appear in; unlisted tabs fall to the end alphabetically |
 | `SUMMARY_TAB` | `"Summary"` | Name of the roll-up tab |
-| `TOTALS_FROM_SUMMARY` | `true` | See note below |
+| `TOTALS_FROM_SUMMARY` | `false` | See note below |
 | `TOP_N` | `6` | Rows shown in the pinned panel (the full set is always in the table beneath) |
 
-### ⚠ `TOTALS_FROM_SUMMARY` — check this assumption
+### `TOTALS_FROM_SUMMARY` — resolved 08/09/2026
 
-The feed returns a `Summary` tab alongside `IQUBE` and `3W`. The hero's three
-headline figures are taken from **`Summary` alone**, on the assumption that
-Summary is a roll-up of the other tabs — summing every tab would otherwise
-double-count.
+Despite its name, the **`Summary` tab is not a roll-up.** Checked against the
+live feed, the three tabs are mutually exclusive product lines with no shared
+models:
 
-**If `Summary` is actually a separate product line rather than a roll-up, set
-`TOTALS_FROM_SUMMARY: false`** and the headline figures will sum all tabs
-instead. Per-category chapters are unaffected either way.
+| Tab | Models |
+| --- | --- |
+| `Summary` | JUPITER, NTORQ, RAIDER 125, RONIN, RTR 160, SPORTELS 110, XL 100 iTouch (petrol 2W) |
+| `IQUBE` | IQUBE ELECTRIC 2.2, IQUBE ELECTRIC 3.4, ORBITER (electric) |
+| `3W` | 3 WHEEL, 3W EV (three-wheelers) |
+
+So the headline figures **sum all three tabs** (`TOTALS_FROM_SUMMARY: false`).
+Taking `Summary` alone would have under-reported the plant by the entire
+electric and three-wheeler output. Set this back to `true` only if a genuine
+roll-up tab is added later.
 
 ---
 

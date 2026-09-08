@@ -563,11 +563,14 @@ const CONFIG = {
   REFRESH_MS: 5 * 60 * 1000,
   CATEGORY_ORDER: ["Summary", "IQUBE", "3W"],
   SUMMARY_TAB: "Summary",
-  /* The sheet carries a "Summary" tab alongside IQUBE and 3W. If Summary is a
-     roll-up of the other tabs, summing every tab would double-count, so the
-     headline figures are taken from Summary alone when it exists.
-     Set to false if Summary is a separate product line rather than a roll-up. */
-  TOTALS_FROM_SUMMARY: true,
+  /* VERIFIED 08/09/2026 against the live feed: despite its name, the "Summary"
+     tab is NOT a roll-up -- it is the petrol two-wheeler range (JUPITER, NTORQ,
+     RAIDER 125, RONIN, RTR 160, SPORTELS 110, XL 100 iTouch). IQUBE holds the
+     electric scooters and 3W the three-wheelers, with ZERO model overlap
+     between the three. They are mutually exclusive product lines, so the
+     headline totals must sum all tabs. Set true only if a genuine roll-up tab
+     is introduced later. */
+  TOTALS_FROM_SUMMARY: false,
   TOP_N: 6
 };
 
