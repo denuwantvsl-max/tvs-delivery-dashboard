@@ -1,1189 +1,1026 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="color-scheme" content="light" />
-<title>TVS Lanka — Delivery &amp; Stock Dashboard</title>
+<title>TVS Lanka — Horana Delivery &amp; Stock Control Board</title>
 <style>
 /* ==================================================================
    TVS LANKA — HORANA ASSEMBLY COMPLEX
-   Delivery & Stock Dashboard — scroll-narrative edition
-   House style: navy / white, industrial, hairline rules, square edges.
-   No external assets. Everything below is self-contained.
+   Delivery & Stock Control Board
+   Plant-floor information design: dense, scannable, no scroll-jacking.
+   Single file, zero external requests (plant network blocks CDNs).
    ================================================================== */
 
-@property --r { syntax: "<number>"; inherits: false; initial-value: 0; }
+/* ---------- tokens: dark (control room) is the default ---------- */
+:root,
+:root[data-theme="dark"]{
+  --bg:#0A1724;
+  --surface:#0F2233;
+  --surface-2:#14293C;
+  --raise:#1A3348;
+  --line:#1E3A52;
+  --line-soft:#172E42;
+  --text:#E9F0F6;
+  --text-dim:#93AAC0;
+  --text-mute:#63809A;
+  --brand:#4F86D6;
+  --brand-ink:#2957A4;
+  --ok:#35C07A;
+  --ok-bg:rgba(53,192,122,.13);
+  --warn:#E9A83E;
+  --warn-bg:rgba(233,168,62,.13);
+  --bad:#EC5B45;
+  --bad-bg:rgba(236,91,69,.13);
+  --grid:rgba(255,255,255,.07);
+  --shadow:none;
+}
+:root[data-theme="light"]{
+  --bg:#EEF2F6;
+  --surface:#FFFFFF;
+  --surface-2:#F6F8FB;
+  --raise:#FFFFFF;
+  --line:#D5DEE8;
+  --line-soft:#E4EAF1;
+  --text:#0D1F31;
+  --text-dim:#546C84;
+  --text-mute:#7C93A9;
+  --brand:#2957A4;
+  --brand-ink:#2957A4;
+  --ok:#1F8C55;
+  --ok-bg:#E6F4EC;
+  --warn:#B4791B;
+  --warn-bg:#FBF1DF;
+  --bad:#C63D28;
+  --bad-bg:#FBEAE7;
+  --grid:rgba(13,31,49,.08);
+  --shadow:0 1px 2px rgba(13,31,49,.06);
+}
 
+/* density 9/10 — dashboard spacing scale */
 :root{
-  --navy-950:#08131F;
-  --navy-900:#0F2138;
-  --navy-800:#152C48;
-  --navy-700:#1B3A5C;
-  --navy-600:#26507C;
-  --steel:#5C7286;
-  --steel-2:#8CA0B3;
-  --paper:#F2F5F8;
-  --panel:#FFFFFF;
-  --line:#DCE2E8;
-  --line-dark:rgba(255,255,255,.14);
-  --amber:#D98E2B;
-  --green:#2F8F5B;
-  --red:#C0392B;
-  --chrome:104px;
-  --runway:300vh;
-  --pad:clamp(20px,5vw,56px);
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
+  --r:3px;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Roboto Mono",monospace;
+  --head:56px;
+  --logo:url("data:image/png;base64,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");
 }
 
 *,*::before,*::after{ box-sizing:border-box; }
-
-html{ scroll-behavior:auto; background:var(--paper); }
+html{ background:var(--bg); }
 body{
-  margin:0;
-  background:var(--paper);
-  color:var(--navy-900);
-  font-family:var(--sans);
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--sans); font-size:14px; line-height:1.45;
   -webkit-font-smoothing:antialiased;
-  text-rendering:optimizeLegibility;
-  overflow-x:hidden;
 }
+/* type scale: 11 12 14 16 20 28 40 */
+.t11{font-size:11px} .t12{font-size:12px} .t16{font-size:16px}
 
-.num{ font-variant-numeric:tabular-nums lining-nums; font-feature-settings:"tnum" 1; }
-.wrap{ max-width:1280px; margin:0 auto; padding-inline:var(--pad); width:100%; }
+.num{ font-family:var(--mono); font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+.lbl{
+  font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--text-mute);
+}
+.wrap{ max-width:1680px; margin:0 auto; padding-inline:var(--s5); }
+.sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 
-/* ---------- chrome: masthead + tab rail ---------- */
-.masthead{
-  position:sticky; top:0; z-index:60;
-  background:var(--navy-950);
-  color:#fff;
-  border-bottom:1px solid rgba(255,255,255,.08);
+/* ---------- masthead ---------- */
+.top{
+  position:sticky; top:0; z-index:50;
+  background:var(--surface); border-bottom:1px solid var(--line);
 }
-.masthead-in{
-  display:flex; align-items:center; justify-content:space-between;
-  gap:16px; flex-wrap:wrap;
-  padding-block:14px;
+.top-in{ display:flex; align-items:center; gap:var(--s5); height:var(--head); }
+.brand{ display:flex; align-items:center; gap:var(--s3); flex:none; }
+.logo{
+  width:30px; height:38px; flex:none;
+  background-color:var(--brand);
+  -webkit-mask:var(--logo) center/contain no-repeat;
+  mask:var(--logo) center/contain no-repeat;
 }
-.brand{ display:flex; align-items:center; gap:14px; min-width:0; }
-.brand-mark{
-  width:34px; height:34px; flex:none;
-  border:1.5px solid var(--amber);
-  display:grid; place-items:center;
-  font-size:12px; font-weight:800; letter-spacing:.06em; color:var(--amber);
-}
-.brand-txt .t{ font-size:15px; font-weight:650; letter-spacing:.01em; }
-.brand-txt .s{
-  font-size:10.5px; letter-spacing:.16em; text-transform:uppercase;
-  color:#7E93A8; margin-top:3px;
-}
-.chrome-right{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.asof{
-  border:1px solid var(--line-dark);
-  padding:7px 13px;
-  font-size:12px; color:#C6D4E2;
-  letter-spacing:.02em;
-}
-.asof b{ color:#fff; font-weight:650; }
-.live{
+.brand b{ display:block; font-size:13px; font-weight:650; letter-spacing:.01em; line-height:1.2; }
+.brand span{ display:block; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-mute); margin-top:1px; }
+
+.top-meta{ margin-left:auto; display:flex; align-items:center; gap:var(--s3); flex-wrap:wrap; }
+.chip{
   display:inline-flex; align-items:center; gap:7px;
-  font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:#7FD8A3;
-  border:1px solid rgba(127,216,163,.28); padding:7px 11px;
+  border:1px solid var(--line); border-radius:var(--r);
+  padding:5px 10px; font-size:11.5px; color:var(--text-dim);
+  background:var(--surface-2); white-space:nowrap;
 }
-.live .dot{
-  width:7px; height:7px; border-radius:50%; background:#3DDB7F;
-  animation:pulse 2.4s ease-out infinite;
+.chip b{ color:var(--text); font-weight:650; }
+.chip .num{ font-size:12px; }
+.dot{ width:7px; height:7px; border-radius:50%; background:var(--ok); flex:none; }
+.chip.live .dot{ animation:blip 2.4s ease-out infinite; }
+.chip.warn .dot{ background:var(--warn); animation:none; }
+.chip.bad  .dot{ background:var(--bad);  animation:none; }
+@keyframes blip{
+  0%{ box-shadow:0 0 0 0 rgba(53,192,122,.5); } 70%{ box-shadow:0 0 0 6px rgba(53,192,122,0); }
+  100%{ box-shadow:0 0 0 0 rgba(53,192,122,0); }
 }
-.live.stale{ color:#E8B95F; border-color:rgba(232,185,95,.3); }
-.live.stale .dot{ background:var(--amber); animation:none; }
-.live.err{ color:#EF8C7E; border-color:rgba(239,140,126,.35); }
-.live.demo{ color:#9DB8D6; border-color:rgba(157,184,214,.3); }
-.live.demo .dot{ background:#7FA8D4; animation:none; }
-.live.err .dot{ background:var(--red); animation:none; }
-@keyframes pulse{
-  0%{ box-shadow:0 0 0 0 rgba(61,219,127,.55); }
-  70%{ box-shadow:0 0 0 8px rgba(61,219,127,0); }
-  100%{ box-shadow:0 0 0 0 rgba(61,219,127,0); }
+.iconbtn{
+  display:inline-grid; place-items:center; width:30px; height:30px;
+  border:1px solid var(--line); border-radius:var(--r);
+  background:var(--surface-2); color:var(--text-dim);
+  cursor:pointer; transition:color .18s ease, border-color .18s ease, background .18s ease;
 }
+.iconbtn:hover{ color:var(--text); border-color:var(--brand); }
+.iconbtn:focus-visible{ outline:2px solid var(--brand); outline-offset:1px; }
+.iconbtn svg{ width:15px; height:15px; }
+:root[data-theme="dark"] .icon-sun{ display:block; }
+:root[data-theme="dark"] .icon-moon{ display:none; }
+:root[data-theme="light"] .icon-sun{ display:none; }
+:root[data-theme="light"] .icon-moon{ display:block; }
 
-.tabrail{
-  position:sticky; top:var(--mast,56px); z-index:59;
-  background:var(--navy-800);
-  border-bottom:1px solid rgba(255,255,255,.07);
+/* ---------- nav ---------- */
+.nav{
+  position:sticky; top:var(--head); z-index:49;
+  background:var(--surface); border-bottom:1px solid var(--line);
 }
-.tabrail-in{ display:flex; gap:0; overflow-x:auto; scrollbar-width:none; }
-.tabrail-in::-webkit-scrollbar{ display:none; }
-.tabbtn{
-  appearance:none; background:none; border:none;
-  color:#9DB2C6; cursor:pointer;
-  padding:15px 22px 13px;
-  font:inherit; font-size:12px; font-weight:700;
-  letter-spacing:.13em; text-transform:uppercase;
-  white-space:nowrap;
-  border-bottom:2px solid transparent;
+.nav-in{ display:flex; gap:var(--s1); overflow-x:auto; scrollbar-width:none; }
+.nav-in::-webkit-scrollbar{ display:none; }
+.tab{
+  appearance:none; background:none; border:none; font:inherit; cursor:pointer;
+  padding:10px 14px; color:var(--text-mute);
+  font-size:12px; font-weight:650; letter-spacing:.05em; text-transform:uppercase;
+  border-bottom:2px solid transparent; white-space:nowrap;
   transition:color .18s ease, border-color .18s ease;
 }
-.tabbtn:first-child{ padding-left:0; }
-.tabbtn:hover{ color:#E4EDF5; }
-.tabbtn[aria-selected="true"]{ color:#fff; border-bottom-color:var(--amber); }
-.tabbtn:focus-visible{ outline:2px solid var(--amber); outline-offset:-2px; }
+.tab:first-child{ padding-left:0; }
+.tab:hover{ color:var(--text); }
+.tab[aria-selected="true"]{ color:var(--text); border-bottom-color:var(--brand); }
+.tab:focus-visible{ outline:2px solid var(--brand); outline-offset:-2px; }
+.tab .cnt{
+  display:inline-block; margin-left:6px; padding:1px 5px; border-radius:20px;
+  background:var(--raise); color:var(--text-dim); font-size:10px; font-family:var(--mono);
+}
+.tab .cnt.alert{ background:var(--bad-bg); color:var(--bad); }
 
-/* ---------- views ---------- */
-body.booting .view{ display:none; }
-body:not(.booting) #bootState{ display:none; }
-.view{ display:none; }
-.view.active{ display:block; }
+main{ padding-block:var(--s5) var(--s8); }
+.view[hidden]{ display:none; }
 
-/* ---------- hero ---------- */
-.hero{
-  background:var(--navy-950);
-  color:#fff;
-  min-height:calc(100vh - var(--chrome));
-  display:flex; align-items:center;
-  position:relative;
-  overflow:hidden;
-  padding-block:clamp(56px,10vh,110px);
+/* ---------- panels ---------- */
+.panel{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+  box-shadow:var(--shadow);
 }
-.hero::after{
-  content:""; position:absolute; inset:0; pointer-events:none;
-  background:
-    repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 1px,transparent 1px 88px),
-    radial-gradient(120% 80% at 82% 12%,rgba(38,80,124,.55),transparent 62%);
+.panel-hd{
+  display:flex; align-items:center; gap:var(--s3);
+  padding:var(--s3) var(--s4); border-bottom:1px solid var(--line);
 }
-.hero-in{ position:relative; z-index:1; width:100%; }
-.kicker{
-  font-size:10.5px; font-weight:700; letter-spacing:.22em; text-transform:uppercase;
-  color:var(--amber);
-  display:flex; align-items:center; gap:12px;
-}
-.kicker::after{ content:""; height:1px; flex:1; max-width:220px; background:rgba(217,142,43,.4); }
-.hero h1{
-  margin:22px 0 0;
-  font-size:clamp(38px,7.2vw,86px);
-  line-height:1.02;
-  letter-spacing:-.035em;
-  font-weight:680;
-  max-width:16ch;
-}
-.hero h1 em{ font-style:normal; color:#7FA8D4; }
-.hero-date{
-  margin-top:26px;
-  font-size:clamp(14px,1.6vw,17px);
-  color:#A9BFD3;
-  letter-spacing:.01em;
-}
-.hero-date b{ color:#fff; font-weight:600; }
+.panel-hd h2{ margin:0; font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+.panel-hd .sub{ font-size:11px; color:var(--text-mute); }
+.panel-hd .right{ margin-left:auto; display:flex; align-items:center; gap:var(--s2); }
+.panel-bd{ padding:var(--s4); }
+.panel-bd.flush{ padding:0; }
 
-.statrow{
-  margin-top:clamp(38px,6vh,72px);
-  display:grid; gap:1px;
-  grid-template-columns:repeat(3,1fr);
-  background:var(--line-dark);
-  border-block:1px solid var(--line-dark);
-}
-.stat{ background:var(--navy-950); padding:26px 26px 24px; }
-.stat:first-child{ padding-left:0; }
-.stat .lbl{
-  font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
-  color:#7E93A8;
-}
-.stat .val{
-  margin-top:12px;
-  font-size:clamp(34px,5.2vw,62px);
-  line-height:1; letter-spacing:-.035em; font-weight:640;
-  color:#fff;
-}
-.stat .val.g{ color:#63D398; }
-.stat .val.a{ color:#F0B761; }
-.stat .val.r{ color:#F58E7F; }
-.stat .sub{ margin-top:10px; font-size:12px; color:#7E93A8; letter-spacing:.02em; }
-
-.scrollcue{
-  margin-top:clamp(34px,5vh,60px);
-  display:inline-flex; align-items:center; gap:11px;
-  font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:#7E93A8;
-}
-.scrollcue i{
-  width:15px; height:15px; border-right:1.5px solid var(--amber); border-bottom:1.5px solid var(--amber);
-  transform:rotate(45deg); display:block;
-  animation:cue 2.1s ease-in-out infinite;
-}
-@keyframes cue{ 0%,100%{ transform:rotate(45deg) translate(0,0); opacity:.45 } 50%{ transform:rotate(45deg) translate(4px,4px); opacity:1 } }
-
-/* ---------- reveal engine ---------- */
-.r{
-  opacity:var(--r,0);
-  transform:translateY(calc(24px * (1 - var(--r,0))));
-  will-change:opacity,transform;
-}
-.r.no-shift{ transform:none; }
-.hr{
-  opacity:var(--r,0);
-  transform:translateY(calc(20px * (1 - var(--r,0))));
-  transition:--r .85s cubic-bezier(.22,.61,.36,1);
-  transition-delay:calc(var(--i,0) * 90ms);
-}
-.hr.in{ --r:1; }
-@keyframes revealK{ from{ --r:0 } to{ --r:1 } }
-@keyframes pinOutK{
-  from{ opacity:1; transform:none; }
-  to{ opacity:0; transform:translateY(-26px) scale(.985); }
-}
-
-/* fallback path (no scroll-driven animations): class-triggered */
-.fallback .r{ transition:--r .8s cubic-bezier(.22,.61,.36,1); transition-delay:calc(var(--i,0) * 70ms); }
-.fallback .r.in{ --r:1; }
-/* last-resort: no @property support at all — show everything */
-.no-anim .r,.no-anim .hr{ --r:1; opacity:1; transform:none; transition:none; animation:none; }
-
-/* ---------- chapters (pinned scroll storytelling) ---------- */
-.chapter{
-  position:relative;
-  height:var(--runway);
-  background:var(--paper);
-}
-.chapter.dark{ background:var(--navy-900); color:#fff; }
-.pin{
-  position:sticky; top:var(--chrome);
-  height:calc(100vh - var(--chrome));
-  min-height:520px;
-  display:flex; align-items:center;
-  overflow:hidden;
-}
-.pin-in{ width:100%; }
-.chapter-grid{
-  display:grid;
-  grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr);
-  gap:clamp(28px,5vw,72px);
-  align-items:center;
-}
-.chapter h2{
-  margin:18px 0 0;
-  font-size:clamp(34px,5.6vw,68px);
-  line-height:1.02; letter-spacing:-.035em; font-weight:660;
-}
-.chapter .lede{
-  margin-top:16px; max-width:38ch;
-  font-size:clamp(14px,1.5vw,17px); line-height:1.55; color:var(--steel);
-}
-.chapter.dark .lede{ color:#9DB2C6; }
-.idx{
-  font-variant-numeric:tabular-nums;
-  color:var(--steel-2); font-weight:700;
-}
-.chapter.dark .idx{ color:#5C7286; }
-
-/* kpi trio inside a chapter */
+/* ---------- KPI strip ---------- */
 .kpis{
-  margin-top:clamp(26px,4vh,44px);
-  display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:1px; background:var(--line);
-  border-block:1px solid var(--line);
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:var(--s3); margin-bottom:var(--s3);
 }
-.chapter.dark .kpis{ background:var(--line-dark); border-color:var(--line-dark); }
-.kpi{ background:var(--paper); padding:18px 18px 16px; }
-.kpi:first-child{ padding-left:0; }
-.chapter.dark .kpi{ background:var(--navy-900); }
-.kpi .lbl{
-  font-size:9.5px; font-weight:700; letter-spacing:.17em; text-transform:uppercase; color:var(--steel);
+.kpi{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+  padding:var(--s3) var(--s4) var(--s4); position:relative; overflow:hidden;
 }
-.chapter.dark .kpi .lbl{ color:#7E93A8; }
-.kpi .val{
-  margin-top:9px; font-size:clamp(26px,3.4vw,42px); line-height:1;
-  letter-spacing:-.032em; font-weight:640;
-}
-.kpi .val.g{ color:var(--green); }
-.kpi .val.a{ color:var(--amber); }
-.kpi .val.r{ color:var(--red); }
-.chapter.dark .kpi .val.g{ color:#63D398; }
-.chapter.dark .kpi .val.a{ color:#F0B761; }
-.chapter.dark .kpi .val.r{ color:#F58E7F; }
-.kpi .foot{ margin-top:8px; font-size:11px; color:var(--steel-2); letter-spacing:.02em; }
+.kpi::before{ content:""; position:absolute; inset:0 auto 0 0; width:3px; background:var(--brand); }
+.kpi.ok::before{ background:var(--ok); } .kpi.warn::before{ background:var(--warn); } .kpi.bad::before{ background:var(--bad); }
+.kpi .v{ font-family:var(--mono); font-size:28px; font-weight:600; line-height:1.1; margin-top:var(--s2); letter-spacing:-.03em; }
+.kpi .foot{ margin-top:var(--s2); font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.delta{ font-family:var(--mono); font-size:11px; font-weight:600; padding:1px 5px; border-radius:2px; }
+.delta.up{ color:var(--ok); background:var(--ok-bg); }
+.delta.down{ color:var(--bad); background:var(--bad-bg); }
+.delta.flat{ color:var(--text-mute); background:var(--raise); }
 
-/* completion meter */
-.meter{ margin-top:26px; }
-.meter-head{
-  display:flex; justify-content:space-between; align-items:baseline;
-  font-size:10.5px; font-weight:700; letter-spacing:.17em; text-transform:uppercase;
-  color:var(--steel);
-}
-.chapter.dark .meter-head{ color:#7E93A8; }
-.meter-head .pct{
-  font-size:15px; letter-spacing:-.01em; color:var(--navy-900); font-weight:700;
-}
-.chapter.dark .meter-head .pct{ color:#fff; }
-.meter-track{
-  margin-top:10px; height:10px; background:var(--line); position:relative; overflow:hidden;
-}
-.chapter.dark .meter-track{ background:rgba(255,255,255,.1); }
-.meter-fill{
-  position:absolute; inset-block:0; left:0;
-  width:calc(var(--w,0) * var(--r,0) * 1%);
-  background:var(--green);
-}
-.meter-fill.over{ background:var(--amber); }
+/* ---------- board grid ---------- */
+.board{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--s3); margin-bottom:var(--s3); }
+.board.two{ grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); }
 
-/* right-hand data column */
-.datacol{ min-width:0; }
-.datacol-head{
-  display:flex; align-items:baseline; justify-content:space-between; gap:12px;
-  font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
-  color:var(--steel);
-  padding-bottom:11px; border-bottom:1px solid var(--line);
-}
-.chapter.dark .datacol-head{ color:#7E93A8; border-color:var(--line-dark); }
+/* line card */
+.linecard .panel-bd{ padding:var(--s4); }
+.attain{ display:flex; align-items:baseline; gap:var(--s2); }
+.attain .p{ font-family:var(--mono); font-size:26px; font-weight:600; letter-spacing:-.03em; }
+.attain .of{ font-size:11px; color:var(--text-mute); }
+.track{ height:8px; background:var(--raise); border-radius:2px; overflow:hidden; margin-top:var(--s2); position:relative; }
+.track i{ position:absolute; inset-block:0; left:0; border-radius:2px; background:var(--ok); transition:width .5s cubic-bezier(.22,.61,.36,1); }
+.track i.warn{ background:var(--warn); } .track i.bad{ background:var(--bad); }
+.track .mark{ position:absolute; top:-2px; bottom:-2px; width:1px; background:var(--text-dim); opacity:.7; }
+.trio{ display:grid; grid-template-columns:repeat(3,1fr); gap:var(--s2); margin-top:var(--s4); }
+.trio div{ border-left:1px solid var(--line); padding-left:var(--s2); }
+.trio div:first-child{ border-left:none; padding-left:0; }
+.trio .n{ font-family:var(--mono); font-size:17px; font-weight:600; margin-top:2px; }
+.trio .n.g{ color:var(--ok); } .trio .n.a{ color:var(--warn); } .trio .n.r{ color:var(--bad); }
 
-.linerow{
-  display:grid;
-  grid-template-columns:minmax(120px,1.35fr) minmax(0,2fr) 62px;
-  align-items:center; gap:16px;
-  padding:11px 0;
-  border-bottom:1px solid var(--line);
-}
-.chapter.dark .linerow{ border-color:var(--line-dark); }
-.linerow:last-child{ border-bottom:none; }
-.linerow .name{ min-width:0; }
-.linerow .name .m{ font-size:13.5px; font-weight:640; letter-spacing:-.005em; display:block;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.linerow .name .c{ font-size:11px; color:var(--steel-2); letter-spacing:.03em; margin-top:2px; display:block;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.linerow .qty{ text-align:right; font-size:14px; font-weight:700; letter-spacing:-.01em; }
-.linerow .qty.a{ color:var(--amber); }
-.linerow .qty.r{ color:var(--red); }
-.bar{ height:9px; background:var(--line); position:relative; overflow:hidden; }
-.chapter.dark .bar{ background:rgba(255,255,255,.1); }
-.bar span{
-  position:absolute; inset-block:0; left:0;
-  width:calc(var(--w,0) * var(--r,0) * 1%);
-  background:var(--c,var(--green));
-}
-
-.more-note{
-  margin-top:14px; font-size:11.5px; color:var(--steel-2); letter-spacing:.04em;
-}
-
-/* ---------- trend chart ---------- */
-.legend{
-  display:flex; gap:18px; flex-wrap:wrap;
-  font-size:10.5px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
-  color:var(--steel); margin-bottom:14px;
-}
-.chapter.dark .legend{ color:#9DB2C6; }
-.legend span{ display:inline-flex; align-items:center; gap:7px; }
-.legend i{ width:14px; height:2.5px; display:inline-block; }
-svg.trend{ display:block; width:100%; height:auto; overflow:visible; }
-svg.trend .grid{ stroke:var(--line); stroke-width:1; }
-.chapter.dark svg.trend .grid{ stroke:rgba(255,255,255,.11); }
-svg.trend .axlbl{ font-size:10px; fill:var(--steel-2); font-family:var(--sans); letter-spacing:.04em; }
-.chapter.dark svg.trend .axlbl{ fill:#6F8598; }
-svg.trend .spark{
-  fill:none; stroke-width:2.25; stroke-linecap:round; stroke-linejoin:round;
-  stroke-dasharray:var(--len,2000);
-  stroke-dashoffset:calc(var(--len,2000) * (1 - var(--r,0)));
-}
-svg.trend .area{ stroke:none; opacity:calc(var(--r,0) * .11); }
-svg.trend .tip{ opacity:var(--r,0); }
-
-/* ---------- ledger (full table under each chapter) ---------- */
-.ledger{ background:var(--panel); border-top:1px solid var(--line); padding-block:clamp(46px,7vh,86px); }
-.ledger-head{
-  display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap;
-  padding-bottom:12px; border-bottom:2px solid var(--navy-900);
-}
-.ledger-head h3{
-  margin:0; font-size:13px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
-}
-.ledger-head .tag{
-  font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--steel);
-}
-.tablescroll{ overflow-x:auto; }
-table{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:520px; }
+/* ---------- tables ---------- */
+.tscroll{ overflow-x:auto; }
+table{ width:100%; border-collapse:collapse; font-size:13px; }
 thead th{
-  text-align:left; padding:11px 14px 10px;
-  font-size:9.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
-  color:var(--steel); border-bottom:1px solid var(--line); white-space:nowrap;
+  position:sticky; top:calc(var(--head) + 37px); z-index:2;
+  background:var(--surface-2); text-align:left; white-space:nowrap;
+  padding:8px var(--s3); border-bottom:1px solid var(--line);
+  font-size:10px; font-weight:700; letter-spacing:.11em; text-transform:uppercase; color:var(--text-mute);
 }
-thead th.n, td.n{ text-align:right; }
-tbody td{ padding:10px 14px; border-bottom:1px solid var(--line); }
-tbody tr:hover{ background:#F7F9FB; }
-tbody td:first-child{ padding-left:0; font-weight:600; }
-thead th:first-child{ padding-left:0; }
-tbody td.dim{ color:var(--steel); font-size:12.5px; }
-td.n{ font-weight:650; letter-spacing:-.01em; }
-td.n.a{ color:var(--amber); }
-td.n.r{ color:var(--red); }
-td.n.g{ color:var(--green); }
+thead th.n{ text-align:right; }
+thead th.sortable{ cursor:pointer; user-select:none; }
+thead th.sortable:hover{ color:var(--text); }
+thead th .arw{ opacity:.35; margin-left:3px; }
+thead th[aria-sort] .arw{ opacity:1; color:var(--brand); }
+tbody td{ padding:7px var(--s3); border-bottom:1px solid var(--line-soft); }
+tbody tr:hover{ background:var(--surface-2); }
+td.n{ text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; }
+td.model{ font-weight:600; }
+td.dim{ color:var(--text-dim); }
+.cellbar{ display:flex; align-items:center; gap:var(--s2); justify-content:flex-end; }
+.cellbar .b{ width:52px; height:5px; background:var(--raise); border-radius:2px; overflow:hidden; flex:none; }
+.cellbar .b i{ display:block; height:100%; background:var(--ok); }
+.cellbar .b i.warn{ background:var(--warn); } .cellbar .b i.bad{ background:var(--bad); }
+
+/* status pill — never colour alone, always carries text */
+.pill{
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  padding:2px 7px; border-radius:2px; white-space:nowrap;
+}
+.pill.ok{ color:var(--ok); background:var(--ok-bg); }
+.pill.warn{ color:var(--warn); background:var(--warn-bg); }
+.pill.bad{ color:var(--bad); background:var(--bad-bg); }
+.pill svg{ width:10px; height:10px; }
+
+/* ---------- controls ---------- */
+.controls{ display:flex; align-items:center; gap:var(--s2); flex-wrap:wrap; }
+.seg{ display:inline-flex; border:1px solid var(--line); border-radius:var(--r); overflow:hidden; }
+.seg button{
+  appearance:none; border:none; background:var(--surface-2); font:inherit; cursor:pointer;
+  padding:5px 11px; font-size:11.5px; font-weight:600; color:var(--text-dim);
+  border-left:1px solid var(--line); transition:background .15s ease, color .15s ease;
+}
+.seg button:first-child{ border-left:none; }
+.seg button[aria-pressed="true"]{ background:var(--brand); color:#fff; }
+.seg button:hover:not([aria-pressed="true"]){ color:var(--text); }
+.seg button:focus-visible{ outline:2px solid var(--brand); outline-offset:-2px; }
+.search{
+  display:flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:var(--r);
+  background:var(--surface-2); padding:0 8px; min-width:180px;
+}
+.search svg{ width:13px; height:13px; color:var(--text-mute); flex:none; }
+.search input{
+  appearance:none; border:none; background:none; font:inherit; font-size:12.5px;
+  color:var(--text); padding:6px 0; width:100%; outline:none;
+}
+.search input::placeholder{ color:var(--text-mute); }
+.search:focus-within{ border-color:var(--brand); }
+
+/* ---------- chart ---------- */
+.chartbox{ position:relative; }
+svg.chart{ display:block; width:100%; height:auto; }
+svg.chart .gl{ stroke:var(--grid); stroke-width:1; }
+svg.chart .ax{ font-size:10px; fill:var(--text-mute); font-family:var(--mono); }
+svg.chart .ln{ fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+svg.chart .pt{ stroke:var(--surface); stroke-width:1.5; }
+svg.chart .hit{ fill:transparent; cursor:crosshair; }
+svg.chart .cross{ stroke:var(--text-dim); stroke-width:1; stroke-dasharray:3 3; opacity:0; }
+svg.chart .flag{ fill:none; stroke:var(--bad); stroke-width:1.5; }
+.legend{ display:flex; gap:var(--s4); flex-wrap:wrap; margin-bottom:var(--s3); }
+.legend button{
+  appearance:none; background:none; border:none; font:inherit; cursor:pointer;
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--text-dim);
+  padding:2px 0;
+}
+.legend button[aria-pressed="false"]{ opacity:.4; text-decoration:line-through; }
+.legend button:focus-visible{ outline:2px solid var(--brand); outline-offset:2px; }
+.legend i{ width:14px; height:3px; border-radius:2px; flex:none; }
+.tip{
+  position:absolute; pointer-events:none; opacity:0; transform:translate(-50%,-100%);
+  background:var(--raise); border:1px solid var(--line); border-radius:var(--r);
+  padding:7px 10px; font-size:11.5px; white-space:nowrap; z-index:5;
+  transition:opacity .12s ease;
+}
+.tip .d{ font-family:var(--mono); color:var(--text-mute); font-size:10.5px; margin-bottom:4px; }
+.tip .row{ display:flex; align-items:center; gap:7px; }
+.tip .row i{ width:8px; height:8px; border-radius:2px; }
+.tip .row b{ font-family:var(--mono); margin-left:auto; padding-left:12px; }
+
+/* ---------- shortage bars ---------- */
+.srow{ display:grid; grid-template-columns:minmax(120px,1.1fr) minmax(0,2fr) 64px; gap:var(--s3);
+       align-items:center; padding:7px var(--s4); border-bottom:1px solid var(--line-soft); }
+.srow:last-child{ border-bottom:none; }
+.srow .nm b{ display:block; font-size:12.5px; font-weight:600; }
+.srow .nm span{ display:block; font-size:10.5px; color:var(--text-mute); }
+.sbar{ height:14px; background:var(--raise); border-radius:2px; overflow:hidden; }
+.sbar i{ display:block; height:100%; background:var(--bad); }
+.sbar i.warn{ background:var(--warn); } .sbar i.low{ background:var(--brand); }
+.srow .q{ text-align:right; font-family:var(--mono); font-weight:600; font-size:13px; }
 
 /* ---------- states ---------- */
-.state{
-  min-height:60vh; display:flex; align-items:center; justify-content:center;
-  text-align:center; padding:60px 20px;
-}
-.state .box{ max-width:560px; }
-.state .k{
-  font-size:10.5px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--amber);
-}
-.state h4{ margin:14px 0 10px; font-size:22px; font-weight:640; letter-spacing:-.02em; }
-.state p{ margin:0; color:var(--steel); font-size:14px; line-height:1.6; }
-.state code{
-  display:inline-block; margin-top:14px; font-size:12px;
-  background:var(--paper); border:1px solid var(--line); padding:7px 11px;
-  word-break:break-all; color:var(--navy-700);
-}
-.empty{ padding:34px 0; color:var(--steel-2); font-size:13.5px; letter-spacing:.02em; }
+.state{ padding:var(--s8) var(--s5); text-align:center; color:var(--text-dim); }
+.state h3{ margin:0 0 6px; font-size:15px; color:var(--text); font-weight:600; }
+.state p{ margin:0 auto; max-width:520px; font-size:13px; line-height:1.6; }
+.state code{ display:inline-block; margin-top:var(--s3); font-family:var(--mono); font-size:11.5px;
+  background:var(--surface-2); border:1px solid var(--line); padding:6px 9px; border-radius:var(--r); word-break:break-all; }
+.empty{ padding:var(--s8); text-align:center; color:var(--text-mute); font-size:12.5px; }
+.skel{ background:linear-gradient(90deg,var(--raise) 25%,var(--surface-2) 37%,var(--raise) 63%);
+  background-size:400% 100%; animation:sk 1.3s ease infinite; border-radius:2px; height:11px; }
+@keyframes sk{ 0%{background-position:100% 50%} 100%{background-position:0 50%} }
 
-footer{
-  background:var(--navy-950); color:#6F8598;
-  font-size:11px; letter-spacing:.11em; text-transform:uppercase;
-  padding-block:26px;
-}
-footer .wrap{ display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+footer{ border-top:1px solid var(--line); margin-top:var(--s6); padding-block:var(--s4); }
+footer .wrap{ display:flex; gap:var(--s4); flex-wrap:wrap; justify-content:space-between;
+  font-size:11px; color:var(--text-mute); }
 
-/* ---------- native CSS scroll-driven animation path ---------- */
-@supports (animation-timeline: view()){
-  .chapter{
-    view-timeline-name:--ch;
-    view-timeline-axis:block;
-    view-timeline-inset:var(--chrome) 0px;
-  }
-  .r{
-    animation:revealK linear both;
-    animation-timeline:--ch;
-    animation-range:contain calc(1% + var(--i,0) * 4.5%) contain calc(24% + var(--i,0) * 4.5%);
-  }
-  .r.slow{ animation-range:contain 4% contain 46%; }
-  .r.late{ animation-range:contain 30% contain 62%; }
-  .pin-in{
-    animation:pinOutK linear both;
-    animation-timeline:--ch;
-    animation-range:contain 88% contain 100%;
-  }
+/* ---------- responsive: 1440 / 1024 / 768 / 375 ---------- */
+@media (max-width:1180px){
+  .board{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .board.two{ grid-template-columns:1fr; }
+}
+@media (max-width:820px){
+  :root{ --head:52px; }
+  .board{ grid-template-columns:1fr; }
+  .wrap{ padding-inline:var(--s3); }
+  .brand span{ display:none; }
+  .top-in{ gap:var(--s3); }
+  thead th{ position:static; }
+  .srow{ grid-template-columns:minmax(90px,1fr) minmax(0,1.5fr) 52px; gap:var(--s2); }
+}
+@media (max-width:420px){
+  .kpis{ grid-template-columns:repeat(2,1fr); }
+  .kpi .v{ font-size:22px; }
+  .chip.hide-xs{ display:none; }
 }
 
-/* ---------- responsive ---------- */
-@media (max-width:900px){
-  :root{ --runway:260vh; }
-  .chapter-grid{ grid-template-columns:1fr; gap:26px; align-items:start; }
-  .pin{ align-items:flex-start; padding-top:26px; overflow-y:auto; }
-  .kpi{ padding:14px 12px; }
-  .statrow{ grid-template-columns:1fr; }
-  .stat{ padding:20px 0; }
-  .stat:first-child{ padding-top:22px; }
-  .linerow{ grid-template-columns:minmax(90px,1fr) minmax(0,1.4fr) 52px; gap:11px; }
-}
-@media (max-width:560px){
-  :root{ --runway:230vh; --chrome:96px; }
-  .brand-mark{ display:none; }
-  .tabbtn{ padding:13px 15px 11px; letter-spacing:.1em; }
-  .pin{ min-height:0; }
-}
-
-/* ---------- accessibility: motion off ---------- */
 @media (prefers-reduced-motion: reduce){
-  .chapter{ height:auto; }
-  .pin{ position:static; height:auto; min-height:0; padding-block:clamp(50px,9vh,90px); overflow:visible; }
-  .r,.hr{ --r:1 !important; opacity:1 !important; transform:none !important;
-          animation:none !important; transition:none !important; }
-  .live .dot,.scrollcue i{ animation:none; }
-  svg.trend .spark{ stroke-dashoffset:0 !important; }
+  *{ animation:none !important; transition:none !important; }
 }
 @media print{
-  .chapter{ height:auto; } .pin{ position:static; height:auto; }
-  .r,.hr{ --r:1; opacity:1; transform:none; }
+  .nav,.top-meta,.controls{ display:none; }
+  body{ background:#fff; color:#000; }
+  .view[hidden]{ display:block !important; }
 }
 </style>
 </head>
 <body>
+<script>
+/* Applied before paint so a stored light theme does not flash dark first. */
+try{ var _t = localStorage.getItem("tvs-board-theme");
+     if (_t) document.documentElement.setAttribute("data-theme", _t); }catch(e){}
+</script>
 
-<header class="masthead">
-  <div class="wrap masthead-in">
+<svg class="sr" aria-hidden="true"><defs>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+  </symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>
+  </symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+  </symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6 9 17l-5-5"/>
+  </symbol>
+</defs></svg>
+
+<header class="top">
+  <div class="wrap top-in">
     <div class="brand">
-      <div class="brand-mark">TVS</div>
-      <div class="brand-txt">
-        <div class="t">Delivery &amp; Stock Dashboard</div>
-        <div class="s">Horana Assembly Complex</div>
+      <div class="logo" role="img" aria-label="TVS"></div>
+      <div>
+        <b>Delivery &amp; Stock Control Board</b>
+        <span>Horana Assembly Complex</span>
       </div>
     </div>
-    <div class="chrome-right">
-      <div class="asof">As of <b id="asOfDate">—</b></div>
-      <div class="live" id="liveBadge"><span class="dot"></span> <span id="liveTxt">Live</span></div>
+    <div class="top-meta">
+      <div class="chip hide-xs"><span class="lbl">Time</span> <b id="clock" class="num">--:--</b></div>
+      <div class="chip"><span class="lbl">As of</span> <b id="asOf" class="num">—</b></div>
+      <div class="chip live" id="liveChip"><span class="dot"></span> <span id="liveTxt">Live</span></div>
+      <button class="iconbtn" id="refreshBtn" type="button" title="Refresh now" aria-label="Refresh data now">
+        <svg aria-hidden="true"><use href="#i-refresh"/></svg>
+      </button>
+      <button class="iconbtn" id="themeBtn" type="button" title="Toggle light / dark" aria-label="Toggle light or dark theme">
+        <svg class="icon-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+        <svg class="icon-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+      </button>
     </div>
   </div>
 </header>
 
-<nav class="tabrail" aria-label="Dashboard sections">
-  <div class="wrap tabrail-in" role="tablist">
-    <button class="tabbtn" role="tab" id="tab-status"   aria-selected="true"  aria-controls="view-status"   data-view="status">Delivery Status</button>
-    <button class="tabbtn" role="tab" id="tab-shortage" aria-selected="false" aria-controls="view-shortage" data-view="shortage">Shortage</button>
-    <button class="tabbtn" role="tab" id="tab-trend"    aria-selected="false" aria-controls="view-trend"    data-view="trend">Trend</button>
+<nav class="nav" aria-label="Board sections">
+  <div class="wrap nav-in" role="tablist">
+    <button class="tab" role="tab" id="tab-overview" aria-selected="true"  aria-controls="v-overview" data-v="overview">Overview</button>
+    <button class="tab" role="tab" id="tab-delivery" aria-selected="false" aria-controls="v-delivery" data-v="delivery">Delivery Status</button>
+    <button class="tab" role="tab" id="tab-shortage" aria-selected="false" aria-controls="v-shortage" data-v="shortage">Shortage <span class="cnt" id="shortCnt">0</span></button>
+    <button class="tab" role="tab" id="tab-trend"    aria-selected="false" aria-controls="v-trend"    data-v="trend">14-Day Trend</button>
   </div>
 </nav>
 
-<main id="main">
+<main class="wrap" id="main">
 
-  <section class="view active" id="view-status" role="tabpanel" aria-labelledby="tab-status">
-    <div class="hero" data-hero="status"></div>
-    <div class="story" id="story-status"></div>
-  </section>
+  <div id="boot" class="panel"><div class="state">
+    <h3>Loading plant data…</h3>
+    <p>Reading the latest recorded day from the Delivery Status pipeline.</p>
+  </div></div>
 
-  <section class="view" id="view-shortage" role="tabpanel" aria-labelledby="tab-shortage">
-    <div class="hero" data-hero="shortage"></div>
-    <div class="story" id="story-shortage"></div>
-  </section>
-
-  <section class="view" id="view-trend" role="tabpanel" aria-labelledby="tab-trend">
-    <div class="hero" data-hero="trend"></div>
-    <div class="story" id="story-trend"></div>
-  </section>
-
-  <div id="bootState" class="state">
-    <div class="box">
-      <div class="k">Connecting</div>
-      <h4>Loading delivery data…</h4>
-      <p>Fetching the latest day from the Delivery Status Raw pipeline.</p>
+  <!-- ============ OVERVIEW ============ -->
+  <section class="view" id="v-overview" role="tabpanel" aria-labelledby="tab-overview" hidden>
+    <div class="kpis" id="kpis"></div>
+    <div class="board" id="lineCards"></div>
+    <div class="board two">
+      <div class="panel">
+        <div class="panel-hd">
+          <h2>Delivered vs plan</h2>
+          <span class="sub" id="trendRange"></span>
+          <div class="right"><span class="lbl">Last 14 recorded days</span></div>
+        </div>
+        <div class="panel-bd">
+          <div class="legend" id="ovLegend"></div>
+          <div class="chartbox" id="ovChartBox"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-hd">
+          <h2>Critical shortages</h2>
+          <div class="right"><span class="lbl" id="ovShortMeta"></span></div>
+        </div>
+        <div class="panel-bd flush" id="ovShort"></div>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <!-- ============ DELIVERY ============ -->
+  <section class="view" id="v-delivery" role="tabpanel" aria-labelledby="tab-delivery" hidden>
+    <div class="panel">
+      <div class="panel-hd">
+        <h2>Delivery status by line</h2>
+        <div class="right controls">
+          <div class="seg" id="delSeg" role="group" aria-label="Filter by product line"></div>
+          <label class="search">
+            <svg aria-hidden="true"><use href="#i-search"/></svg>
+            <input type="search" id="delSearch" placeholder="Model or colour…" aria-label="Filter rows by model or colour">
+          </label>
+        </div>
+      </div>
+      <div class="panel-bd flush tscroll" id="delTable"></div>
+    </div>
+  </section>
+
+  <!-- ============ SHORTAGE ============ -->
+  <section class="view" id="v-shortage" role="tabpanel" aria-labelledby="tab-shortage" hidden>
+    <div class="kpis" id="shKpis"></div>
+    <div class="board two">
+      <div class="panel">
+        <div class="panel-hd">
+          <h2>Ranked by units short</h2>
+          <div class="right controls">
+            <div class="seg" id="shSeg" role="group" aria-label="Filter by product line"></div>
+          </div>
+        </div>
+        <div class="panel-bd flush" id="shBars"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-hd"><h2>Shortage register</h2></div>
+        <div class="panel-bd flush tscroll" id="shTable"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TREND ============ -->
+  <section class="view" id="v-trend" role="tabpanel" aria-labelledby="tab-trend" hidden>
+    <div class="panel" style="margin-bottom:var(--s3)">
+      <div class="panel-hd">
+        <h2>14-day movement</h2>
+        <div class="right controls">
+          <div class="seg" id="trSeg" role="group" aria-label="Select product line"></div>
+        </div>
+      </div>
+      <div class="panel-bd">
+        <div class="legend" id="trLegend"></div>
+        <div class="chartbox" id="trChartBox"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-hd"><h2>Daily history</h2><span class="sub">Newest first</span></div>
+      <div class="panel-bd flush tscroll" id="trTable"></div>
+    </div>
+  </section>
 
 </main>
 
-<footer>
-  <div class="wrap">
-    <span>Auto-refresh every 5 minutes</span>
-    <span id="footStamp">Source: Delivery Status Raw</span>
-  </div>
-</footer>
+<footer><div class="wrap">
+  <span>Auto-refresh every 5 min · source: Delivery Status Raw</span>
+  <span id="stamp"></span>
+</div></footer>
 
 <script>
 /* ==================================================================
    CONFIG — the only block you normally need to touch.
-   WEBAPP_URL is the Apps Script Web App deployment URL (ends in /exec)
-   produced by dashboard-webapp-snippet.gs.
    ================================================================== */
 const CONFIG = {
   WEBAPP_URL: "https://script.google.com/macros/s/AKfycbzrmWAPrzTarsBin-1zjqNbqiwkmg3vMxcgz1s3fDiZXPx4GU3iDoVrIo9_BZ0e76U2/exec",
   REFRESH_MS: 5 * 60 * 1000,
-  CATEGORY_ORDER: ["Summary", "IQUBE", "3W"],
-  SUMMARY_TAB: "Summary",
-  /* VERIFIED 08/09/2026 against the live feed: despite its name, the "Summary"
-     tab is NOT a roll-up -- it is the petrol two-wheeler range (JUPITER, NTORQ,
-     RAIDER 125, RONIN, RTR 160, SPORTELS 110, XL 100 iTouch). IQUBE holds the
-     electric scooters and 3W the three-wheelers, with ZERO model overlap
-     between the three. They are mutually exclusive product lines, so the
-     headline totals must sum all tabs. Set true only if a genuine roll-up tab
-     is introduced later. */
-  TOTALS_FROM_SUMMARY: false,
-  TOP_N: 6
+  LINE_ORDER: ["Summary", "IQUBE", "3W"],
+  /* Display-only subtitle per tab. Verified 08/09/2026: the three tabs are
+     mutually exclusive product lines, not a roll-up plus detail. */
+  LINE_DESC: { "Summary": "Petrol two-wheelers", "IQUBE": "Electric scooters", "3W": "Three-wheelers" },
+  /* A day is flagged on the chart when delivered falls below this share of plan. */
+  MISS_THRESHOLD: 0.6,
+  /* Row status bands (delivered / plan). */
+  BAND_OK: 1.0,
+  BAND_WARN: 0.8
 };
 
-const PALETTE = { delivered:"#2F8F5B", plan:"#26507C", pending:"#D98E2B" };
+const C = { delivered:"#35C07A", plan:"#4F86D6", pending:"#E9A83E" };
+
+/* ---------------- theme ---------------- */
+const THEME_KEY = "tvs-board-theme";
+function setTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+}
+document.getElementById("themeBtn").addEventListener("click", () => {
+  setTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  if (LAST) render(LAST);            /* charts read CSS colours, so redraw */
+});
 
 /* ---------------- helpers ---------------- */
+const $ = id => document.getElementById(id);
 const fmt = n => Number(n || 0).toLocaleString("en-US");
-const ESC_MAP = { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" };
-const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ESC_MAP[c]);
-const pad2 = n => String(n).padStart(2, "0");
-const sum = (arr, k) => arr.reduce((a, x) => a + (Number(x[k]) || 0), 0);
+const EM = { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" };
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => EM[c]);
+const sum = (a, k) => a.reduce((t, x) => t + (Number(x[k]) || 0), 0);
+const pct = (a, b) => b > 0 ? (a / b) : null;
 
-function groupBy(arr, key){
-  return (arr || []).reduce((acc, item) => {
-    const k = item[key] == null ? "—" : String(item[key]);
-    (acc[k] = acc[k] || []).push(item);
-    return acc;
-  }, {});
-}
-
-function orderedCats(keys){
-  const order = CONFIG.CATEGORY_ORDER;
-  return keys.slice().sort((a, b) => {
-    const ia = order.indexOf(a), ib = order.indexOf(b);
+function lines(rows){
+  const seen = [...new Set((rows || []).map(r => String(r.tab)))];
+  return seen.sort((a, b) => {
+    const ia = CONFIG.LINE_ORDER.indexOf(a), ib = CONFIG.LINE_ORDER.indexOf(b);
     if (ia !== -1 && ib !== -1) return ia - ib;
     if (ia !== -1) return -1;
     if (ib !== -1) return 1;
     return a.localeCompare(b);
   });
 }
+const shortDate = d => { const p = String(d).split("/"); return p.length >= 2 ? p[0] + "/" + p[1] : String(d); };
+function parseDMY(s){ const p = String(s).split("/"); return new Date(+p[2], +p[1] - 1, +p[0]); }
 
-/* Rows used for headline totals — see CONFIG.TOTALS_FROM_SUMMARY. */
-function totalsScope(rows){
-  if (!rows || !rows.length) return [];
-  if (!CONFIG.TOTALS_FROM_SUMMARY) return rows;
-  const s = rows.filter(r => String(r.tab) === CONFIG.SUMMARY_TAB);
-  return s.length ? s : rows;
+/* Status band for a delivery row — text always accompanies the colour. */
+function band(delivered, plan){
+  if (!plan && !delivered) return { k:"none", t:"No plan" };
+  if (!plan) return { k:"warn", t:"Unplanned" };
+  const r = delivered / plan;
+  if (r >= CONFIG.BAND_OK) return { k:"ok", t:"On plan" };
+  if (r >= CONFIG.BAND_WARN) return { k:"warn", t:"Behind" };
+  return { k:"bad", t:"Short" };
 }
-
-function shortDate(d){
-  const p = String(d).split("/");
-  return p.length >= 2 ? pad2(p[0]) + "/" + pad2(p[1]) : String(d);
+function pillHTML(b){
+  if (b.k === "none") return '<span class="pill" style="color:var(--text-mute);background:var(--raise)">' + b.t + '</span>';
+  const ico = b.k === "ok" ? "i-check" : "i-alert";
+  return '<span class="pill ' + b.k + '"><svg aria-hidden="true"><use href="#' + ico + '"/></svg>' + b.t + '</span>';
 }
+function barClass(r){ return r === null ? "" : (r >= CONFIG.BAND_OK ? "" : (r >= CONFIG.BAND_WARN ? "warn" : "bad")); }
 
-/* ---------------- hero ---------------- */
-const HERO_COPY = {
-  status:   { kicker: "Delivery Status", head: "Where today&rsquo;s deliveries <em>actually stand</em>." },
-  shortage: { kicker: "Stock Shortage",  head: "What stock is <em>holding orders back</em>." },
-  trend:    { kicker: "14-Day Trend",    head: "How the line has <em>moved this fortnight</em>." }
-};
-
-function buildHero(view, data){
-  const copy = HERO_COPY[view];
-  const st = totalsScope(data.deliveryStatus);
-  const sh = totalsScope(data.shortage);
-  const delivered = sum(st, "delivered");
-  const plan = sum(st, "plan");
-  const pending = sum(st, "pending");
-  const shortLines = sh.length;
-  const shortUnits = sum(sh, "qty");
-  const cats = orderedCats(Object.keys(groupBy(data.deliveryStatus, "tab")));
-
-  return `
-  <div class="wrap hero-in">
-    <div class="kicker hr" style="--i:0">${copy.kicker}</div>
-    <h1 class="hr" style="--i:1">${copy.head}</h1>
-    <div class="hero-date hr" style="--i:2">
-      Latest recorded day <b>${esc(data.asOfDate || "—")}</b>
-      &nbsp;&middot;&nbsp; ${cats.length} categor${cats.length === 1 ? "y" : "ies"}: ${cats.map(esc).join(" &nbsp;/&nbsp; ")}
-    </div>
-    <div class="statrow">
-      <div class="stat hr" style="--i:3">
-        <div class="lbl">Total delivered</div>
-        <div class="val g num count" data-count="${delivered}">0</div>
-        <div class="sub">against ${fmt(plan)} planned</div>
-      </div>
-      <div class="stat hr" style="--i:4">
-        <div class="lbl">Total pending</div>
-        <div class="val a num count" data-count="${pending}">0</div>
-        <div class="sub">awaiting despatch</div>
-      </div>
-      <div class="stat hr" style="--i:5">
-        <div class="lbl">Shortage lines</div>
-        <div class="val r num count" data-count="${shortLines}">0</div>
-        <div class="sub">${fmt(shortUnits)} units short of stock</div>
-      </div>
-    </div>
-    <div class="scrollcue hr" style="--i:6">Scroll <i></i></div>
-  </div>`;
-}
-
-/* ---------------- shared chapter scaffolding ---------------- */
-function chapterOpen(cat, ci, total, kicker, dark){
-  return `
-  <section class="chapter${dark ? " dark" : ""}">
-    <div class="pin"><div class="pin-in"><div class="wrap">
-      <div class="chapter-grid">
-        <div class="storycol">
-          <div class="kicker r" style="--i:0">
-            <span class="idx">${pad2(ci + 1)}&thinsp;/&thinsp;${pad2(total)}</span> ${kicker}
-          </div>
-          <h2 class="r" style="--i:1">${esc(cat)}</h2>`;
-}
-
-function chapterMid(){ return `</div><div class="datacol">`; }
-function chapterClose(){ return `</div></div></div></div></div></section>`; }
-
-function ledger(title, tag, head, body){
-  return `
-  <div class="ledger"><div class="wrap">
-    <div class="ledger-head"><h3>${title}</h3><span class="tag">${tag}</span></div>
-    <div class="tablescroll">
-      <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
-    </div>
-  </div></div>`;
-}
-
-function emptyStory(msg){
-  return `<div class="ledger"><div class="wrap"><div class="empty">${esc(msg)}</div></div></div>`;
-}
-
-/* ---------------- story 1: Delivery Status ---------------- */
-function buildStatusStory(data){
-  const groups = groupBy(data.deliveryStatus, "tab");
-  const cats = orderedCats(Object.keys(groups));
-  if (!cats.length) return emptyStory("No delivery status rows recorded for the latest day.");
-
-  return cats.map((cat, ci) => {
-    const rows = groups[cat].slice().sort((a, b) => (b.pending - a.pending) || (b.plan - a.plan));
-    const delivered = sum(rows, "delivered");
-    const plan = sum(rows, "plan");
-    const pending = sum(rows, "pending");
-    const pct = plan > 0 ? Math.round((delivered / plan) * 100) : 0;
-    const top = rows.slice(0, CONFIG.TOP_N);
-    const scale = Math.max(1, ...rows.map(r => Math.max(Number(r.plan) || 0, Number(r.delivered) || 0)));
-
-    const lines = top.map((r, i) => {
-      const dw = Math.min(100, ((Number(r.delivered) || 0) / scale) * 100);
-      const pw = Math.min(100, ((Number(r.plan) || 0) / scale) * 100);
-      return `
-        <div class="linerow">
-          <div class="name r" style="--i:${4 + i}">
-            <span class="m">${esc(r.model)}</span><span class="c">${esc(r.color)}</span>
-          </div>
-          <div class="bar" title="Delivered ${fmt(r.delivered)} of plan ${fmt(r.plan)}">
-            <span class="r no-shift" style="--i:${4 + i};--w:${pw.toFixed(1)};--c:rgba(38,80,124,.28)"></span>
-            <span class="r no-shift" style="--i:${4.4 + i};--w:${dw.toFixed(1)};--c:${PALETTE.delivered}"></span>
-          </div>
-          <div class="qty num a r" style="--i:${4 + i}">${fmt(r.pending)}</div>
-        </div>`;
-    }).join("");
-
-    const rest = rows.length - top.length;
-    const extra = rest > 0
-      ? `<div class="more-note r" style="--i:${4 + top.length}">+ ${rest} further line${rest === 1 ? "" : "s"} in the table below</div>`
-      : "";
-
-    const body = rows.map(r => `
-      <tr>
-        <td>${esc(r.model)}</td>
-        <td class="dim">${esc(r.color)}</td>
-        <td class="n g num">${fmt(r.delivered)}</td>
-        <td class="n num">${fmt(r.plan)}</td>
-        <td class="n a num">${fmt(r.pending)}</td>
-      </tr>`).join("");
-
-    return chapterOpen(cat, ci, cats.length, "Delivery Status", ci % 2 === 1) + `
-      <p class="lede r" style="--i:2">${rows.length} model / colour line${rows.length === 1 ? "" : "s"} tracked on ${esc(data.asOfDate || "the latest day")}.</p>
-      <div class="kpis">
-        <div class="kpi r" style="--i:3"><div class="lbl">Delivered</div>
-          <div class="val g num count" data-count="${delivered}">0</div><div class="foot">units despatched</div></div>
-        <div class="kpi r" style="--i:3.6"><div class="lbl">Plan</div>
-          <div class="val num count" data-count="${plan}">0</div><div class="foot">units scheduled</div></div>
-        <div class="kpi r" style="--i:4.2"><div class="lbl">Pending</div>
-          <div class="val a num count" data-count="${pending}">0</div><div class="foot">still to go</div></div>
-      </div>
-      <div class="meter r" style="--i:5">
-        <div class="meter-head"><span>Plan completion</span><span class="pct num">${pct}%</span></div>
-        <div class="meter-track">
-          <div class="meter-fill r no-shift${pct > 100 ? " over" : ""}" style="--i:5.5;--w:${Math.min(100, pct)}"></div>
-        </div>
-      </div>`
-      + chapterMid() + `
-      <div class="datacol-head r" style="--i:3">
-        <span>Top ${top.length} by pending</span><span>Delivered vs plan</span>
-      </div>
-      ${lines}${extra}`
-      + chapterClose()
-      + ledger(esc(cat) + " &mdash; full delivery lines", fmt(rows.length) + " lines",
-          `<th>Model</th><th>Colour</th><th class="n">Delivered</th><th class="n">Plan</th><th class="n">Pending</th>`,
-          body);
-  }).join("");
-}
-
-/* ---------------- story 2: Shortage ---------------- */
-function buildShortageStory(data){
-  const groups = groupBy(data.shortage, "tab");
-  const cats = orderedCats(Object.keys(groups));
-  if (!cats.length) return emptyStory("No stock shortages recorded for the latest day.");
-
-  return cats.map((cat, ci) => {
-    const rows = groups[cat].slice().sort((a, b) => b.qty - a.qty);
-    const units = sum(rows, "qty");
-    const worst = rows[0] || { qty: 0, model: "—", color: "" };
-    const scale = Math.max(1, ...rows.map(r => Number(r.qty) || 0));
-    const top = rows.slice(0, CONFIG.TOP_N);
-
-    const severity = q => q >= scale * 0.66 ? "#C0392B" : (q >= scale * 0.33 ? "#D98E2B" : "#E0B267");
-
-    const lines = top.map((r, i) => {
-      const w = Math.max(4, ((Number(r.qty) || 0) / scale) * 100);
-      return `
-        <div class="linerow">
-          <div class="name r" style="--i:${4 + i}">
-            <span class="m">${esc(r.model)}</span><span class="c">${esc(r.color)}</span>
-          </div>
-          <div class="bar">
-            <span class="r no-shift" style="--i:${4 + i};--w:${w.toFixed(1)};--c:${severity(Number(r.qty) || 0)}"></span>
-          </div>
-          <div class="qty num r" style="--i:${4 + i}">${fmt(r.qty)}</div>
-        </div>`;
-    }).join("");
-
-    const rest = rows.length - top.length;
-    const extra = rest > 0
-      ? `<div class="more-note r" style="--i:${4 + top.length}">+ ${rest} further short line${rest === 1 ? "" : "s"} in the table below</div>`
-      : "";
-
-    const body = rows.map(r => `
-      <tr>
-        <td>${esc(r.model)}</td>
-        <td class="dim">${esc(r.color)}</td>
-        <td class="n r num">${fmt(r.qty)}</td>
-      </tr>`).join("");
-
-    return chapterOpen(cat, ci, cats.length, "Stock Shortage", ci % 2 === 1) + `
-      <p class="lede r" style="--i:2">${rows.length} line${rows.length === 1 ? "" : "s"} cannot be covered from stock against open delivery orders.</p>
-      <div class="kpis">
-        <div class="kpi r" style="--i:3"><div class="lbl">Units short</div>
-          <div class="val r num count" data-count="${units}">0</div><div class="foot">across the category</div></div>
-        <div class="kpi r" style="--i:3.6"><div class="lbl">Lines affected</div>
-          <div class="val a num count" data-count="${rows.length}">0</div><div class="foot">model / colour</div></div>
-        <div class="kpi r" style="--i:4.2"><div class="lbl">Worst line</div>
-          <div class="val num count" data-count="${worst.qty}">0</div><div class="foot">${esc(worst.model)}</div></div>
-      </div>`
-      + chapterMid() + `
-      <div class="datacol-head r" style="--i:3">
-        <span>Top ${top.length} by shortfall</span><span>Units short</span>
-      </div>
-      ${lines}${extra}`
-      + chapterClose()
-      + ledger(esc(cat) + " &mdash; full shortage list", fmt(rows.length) + " lines",
-          `<th>Model</th><th>Colour</th><th class="n">Units short</th>`,
-          body);
-  }).join("");
-}
-
-/* ---------------- story 3: Trend ---------------- */
-function niceMax(v){
-  if (!(v > 0)) return 10;
-  const mag = Math.pow(10, Math.floor(Math.log10(v)));
-  const n = v / mag;
-  const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10;
-  return step * mag;
-}
-
-function trendChart(dates, series){
-  const W = 780, H = 280, pl = 54, pr = 18, pt = 18, pb = 36;
+/* ---------------- reusable line chart ---------------- */
+function drawChart(box, dates, series, opts){
+  opts = opts || {};
+  const W = 900, H = opts.height || 250, pl = 46, pr = 14, pt = 12, pb = 26;
   const iw = W - pl - pr, ih = H - pt - pb;
-  const n = dates.length;
+  const vis = series.filter(s => s.visible !== false);
   let peak = 1;
-  series.forEach(s => s.values.forEach(v => { if (v > peak) peak = v; }));
-  const max = niceMax(peak);
+  vis.forEach(s => s.values.forEach(v => { if (v > peak) peak = v; }));
+  const mag = Math.pow(10, Math.floor(Math.log10(peak)));
+  const nn = peak / mag;
+  const max = (nn <= 1 ? 1 : nn <= 2 ? 2 : nn <= 5 ? 5 : 10) * mag;
+  const n = dates.length;
   const X = i => n < 2 ? pl + iw / 2 : pl + i * (iw / (n - 1));
   const Y = v => pt + ih - (Math.max(0, Math.min(max, v)) / max) * ih;
 
-  let grid = "";
-  [0, 0.25, 0.5, 0.75, 1].forEach(t => {
-    const y = (pt + ih - t * ih).toFixed(1);
-    grid += `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y}" y2="${y}"/>`;
-    grid += `<text class="axlbl" x="${pl - 10}" y="${y}" text-anchor="end" dominant-baseline="middle">${fmt(Math.round(max * t))}</text>`;
+  let g = "";
+  for (let t = 0; t <= 4; t++){
+    const y = (pt + ih - (t / 4) * ih).toFixed(1);
+    g += '<line class="gl" x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y + '" y2="' + y + '"/>' +
+         '<text class="ax" x="' + (pl - 8) + '" y="' + y + '" text-anchor="end" dominant-baseline="middle">' + fmt(Math.round(max * t / 4)) + '</text>';
+  }
+  const step = Math.max(1, Math.ceil(n / 7));
+  let xl = "";
+  for (let i = 0; i < n; i += step){
+    const anchor = i === 0 ? "start" : (i >= n - 1 ? "end" : "middle");
+    xl += '<text class="ax" x="' + X(i).toFixed(1) + '" y="' + (H - pb + 16) + '" text-anchor="' + anchor + '">' + esc(shortDate(dates[i])) + '</text>';
+  }
+
+  let paths = "", pts = "", flags = "";
+  vis.forEach(s => {
+    paths += '<polyline class="ln" stroke="' + s.color + '" points="' +
+      s.values.map((v, i) => X(i).toFixed(1) + "," + Y(v).toFixed(1)).join(" ") + '"/>';
+    if (n <= 20) s.values.forEach((v, i) => {
+      pts += '<circle class="pt" cx="' + X(i).toFixed(1) + '" cy="' + Y(v).toFixed(1) + '" r="2.6" fill="' + s.color + '"/>';
+    });
+  });
+  /* Missed days get a ring AND appear in the tooltip — never colour alone. */
+  (opts.flags || []).forEach(i => {
+    flags += '<circle class="flag" cx="' + X(i).toFixed(1) + '" cy="' + Y(opts.flagValues[i]).toFixed(1) + '" r="6"/>';
   });
 
-  const idxs = n <= 3 ? dates.map((d, i) => i) : [0, Math.floor((n - 1) / 2), n - 1];
-  let xlbl = "";
-  idxs.forEach(i => {
-    const anchor = i === 0 ? "start" : (i === n - 1 ? "end" : "middle");
-    xlbl += `<text class="axlbl" x="${X(i).toFixed(1)}" y="${H - pb + 20}" text-anchor="${anchor}">${esc(shortDate(dates[i]))}</text>`;
-  });
+  box.innerHTML =
+    '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" role="img" tabindex="0" ' +
+    'aria-label="' + esc(opts.label || "Trend chart") + '">' +
+      g + xl + paths + pts + flags +
+      '<line class="cross" id="cx" y1="' + pt + '" y2="' + (pt + ih) + '"/>' +
+      '<rect class="hit" x="' + pl + '" y="' + pt + '" width="' + iw + '" height="' + ih + '"/>' +
+    '</svg><div class="tip" role="status" aria-live="polite"></div>';
 
-  let area = "", paths = "", tips = "";
-  series.forEach((s, si) => {
-    const pts = s.values.map((v, i) => X(i).toFixed(1) + "," + Y(v).toFixed(1)).join(" ");
-    if (s.key === "delivered" && n > 1){
-      area = `<polygon class="area r no-shift" style="--i:1" fill="${s.color}" points="${pl},${(pt + ih).toFixed(1)} ${pts} ${(W - pr).toFixed(1)},${(pt + ih).toFixed(1)}"/>`;
-    }
-    paths += `<polyline class="spark r slow no-shift" style="--i:${si}" stroke="${s.color}" points="${pts}"/>`;
-    const li = n - 1;
-    tips += `<circle class="tip r late no-shift" style="--i:${si}" cx="${X(li).toFixed(1)}" cy="${Y(s.values[li]).toFixed(1)}" r="3.5" fill="${s.color}"/>`;
+  const svg = box.querySelector("svg"), tip = box.querySelector(".tip"), cross = box.querySelector("#cx");
+  let active = -1;
+  function show(i){
+    if (i < 0 || i >= n){ tip.style.opacity = 0; cross.style.opacity = 0; return; }
+    active = i;
+    const r = svg.getBoundingClientRect();
+    const px = (X(i) / W) * r.width;
+    cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.style.opacity = .8;
+    let html = '<div class="d">' + esc(dates[i]) + (opts.flags && opts.flags.indexOf(i) !== -1 ? ' &middot; UNDER PLAN' : '') + '</div>';
+    vis.forEach(s => {
+      html += '<div class="row"><i style="background:' + s.color + '"></i>' + esc(s.label) + '<b>' + fmt(s.values[i]) + '</b></div>';
+    });
+    tip.innerHTML = html;
+    tip.style.opacity = 1;
+    tip.style.left = Math.max(60, Math.min(r.width - 60, px)) + "px";
+    tip.style.top = ((pt + ih * 0.15) / H) * r.height + "px";
+  }
+  function fromX(clientX){
+    const r = svg.getBoundingClientRect();
+    const rel = ((clientX - r.left) / r.width) * W;
+    if (n < 2) return 0;
+    return Math.max(0, Math.min(n - 1, Math.round((rel - pl) / (iw / (n - 1)))));
+  }
+  svg.addEventListener("pointermove", e => show(fromX(e.clientX)));
+  svg.addEventListener("pointerleave", () => { tip.style.opacity = 0; cross.style.opacity = 0; active = -1; });
+  svg.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight"){ e.preventDefault(); show(Math.min(n - 1, active + 1)); }
+    if (e.key === "ArrowLeft"){ e.preventDefault(); show(Math.max(0, active < 0 ? n - 1 : active - 1)); }
+    if (e.key === "Escape"){ tip.style.opacity = 0; cross.style.opacity = 0; active = -1; }
   });
-
-  return `<svg class="trend" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img"
-    aria-label="Delivered, plan and pending over the last ${n} recorded days">${grid}${area}${paths}${tips}${xlbl}</svg>`;
+  svg.addEventListener("focus", () => { if (active < 0) show(n - 1); });
 }
 
-function buildTrendStory(data){
-  const groups = groupBy(data.trend, "tab");
-  const cats = orderedCats(Object.keys(groups));
-  if (!cats.length) return emptyStory("Not enough trend history recorded yet.");
+function legendHTML(id, series, isStatic){
+  if (isStatic) return series.map(s =>
+    '<span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;' +
+    'letter-spacing:.05em;text-transform:uppercase;color:var(--text-dim)">' +
+    '<i style="width:14px;height:3px;border-radius:2px;background:' + s.color + '"></i>' +
+    esc(s.label) + '</span>').join("");
+  return series.map((s, i) =>
+    '<button type="button" data-k="' + s.key + '" aria-pressed="' + (s.visible !== false) + '">' +
+    '<i style="background:' + s.color + '"></i>' + esc(s.label) + '</button>').join("");
+}
 
-  return cats.map((cat, ci) => {
-    const rows = groups[cat].slice();
-    const dates = rows.map(r => r.date);
-    const delivered = rows.map(r => Number(r.delivered) || 0);
-    const plan = rows.map(r => Number(r.plan) || 0);
-    const pending = rows.map(r => Number(r.pending) || 0);
-    const latest = delivered.length ? delivered[delivered.length - 1] : 0;
-    const avg = delivered.length ? Math.round(delivered.reduce((a, b) => a + b, 0) / delivered.length) : 0;
-    const best = delivered.length ? Math.max.apply(null, delivered) : 0;
-    const delta = avg > 0 ? Math.round(((latest - avg) / avg) * 100) : 0;
-    const deltaTxt = delta === 0 ? "level with" : (delta > 0 ? "+" + delta + "% above" : delta + "% below");
+/* ---------------- sortable table ---------------- */
+function buildTable(host, cols, rows, state){
+  const head = cols.map(c =>
+    '<th class="' + (c.n ? "n " : "") + (c.sort ? "sortable" : "") + '"' +
+    (state.key === c.k ? ' aria-sort="' + (state.dir > 0 ? "ascending" : "descending") + '"' : "") +
+    (c.sort ? ' data-k="' + c.k + '" tabindex="0" role="columnheader"' : "") + '>' +
+    esc(c.t) + (c.sort ? '<span class="arw">' + (state.key === c.k ? (state.dir > 0 ? "▲" : "▼") : "⇅") + '</span>' : "") +
+    '</th>').join("");
+  const body = rows.length
+    ? rows.map(r => "<tr>" + cols.map(c => '<td class="' + (c.cls || "") + '">' + c.v(r) + "</td>").join("") + "</tr>").join("")
+    : '<tr><td colspan="' + cols.length + '"><div class="empty">No rows match the current filter.</div></td></tr>';
+  host.innerHTML = "<table><thead><tr>" + head + "</tr></thead><tbody>" + body + "</tbody></table>";
+  host.querySelectorAll("th.sortable").forEach(th => {
+    const go = () => {
+      const k = th.dataset.k;
+      if (state.key === k) state.dir = -state.dir; else { state.key = k; state.dir = -1; }
+      state.redraw();
+    };
+    th.addEventListener("click", go);
+    th.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); go(); } });
+  });
+}
+function sortRows(rows, state, numeric){
+  if (!state.key) return rows;
+  return rows.slice().sort((a, b) => {
+    const x = a[state.key], y = b[state.key];
+    if (numeric.indexOf(state.key) !== -1) return (Number(x) - Number(y)) * state.dir;
+    return String(x).localeCompare(String(y)) * state.dir;
+  });
+}
 
-    const series = [
-      { key:"delivered", label:"Delivered", color:PALETTE.delivered, values:delivered },
-      { key:"plan",      label:"Plan",      color:PALETTE.plan,      values:plan },
-      { key:"pending",   label:"Pending",   color:PALETTE.pending,   values:pending }
-    ];
+/* ---------------- segmented filter ---------------- */
+function buildSeg(host, opts, current, onPick){
+  host.innerHTML = opts.map(o =>
+    '<button type="button" data-v="' + esc(o) + '" aria-pressed="' + (o === current) + '">' + esc(o) + "</button>").join("");
+  host.querySelectorAll("button").forEach(b =>
+    b.addEventListener("click", () => onPick(b.dataset.v)));
+}
 
-    const body = rows.slice().reverse().map(r => `
-      <tr>
-        <td>${esc(r.date)}</td>
-        <td class="n g num">${fmt(r.delivered)}</td>
-        <td class="n num">${fmt(r.plan)}</td>
-        <td class="n a num">${fmt(r.pending)}</td>
-      </tr>`).join("");
+/* ---------------- view state ---------------- */
+let LAST = null;
+const S = {
+  del: { line:"All", q:"", sort:{ key:"pending", dir:-1, redraw:() => renderDelivery() } },
+  sh:  { line:"All",        sort:{ key:"qty",     dir:-1, redraw:() => renderShortage() } },
+  tr:  { line:"All", series:{ delivered:true, plan:true, pending:false } }
+};
 
-    return chapterOpen(cat, ci, cats.length, "14-Day Trend", ci % 2 === 1) + `
-      <p class="lede r" style="--i:2">${dates.length} recorded day${dates.length === 1 ? "" : "s"}, ${esc(shortDate(dates[0]))} to ${esc(shortDate(dates[dates.length - 1]))}. The latest day sits ${deltaTxt} the period average.</p>
-      <div class="kpis">
-        <div class="kpi r" style="--i:3"><div class="lbl">Latest day</div>
-          <div class="val g num count" data-count="${latest}">0</div><div class="foot">delivered</div></div>
-        <div class="kpi r" style="--i:3.6"><div class="lbl">Period average</div>
-          <div class="val num count" data-count="${avg}">0</div><div class="foot">per day</div></div>
-        <div class="kpi r" style="--i:4.2"><div class="lbl">Best day</div>
-          <div class="val a num count" data-count="${best}">0</div><div class="foot">peak despatch</div></div>
-      </div>`
-      + chapterMid() + `
-      <div class="legend r" style="--i:3">
-        <span><i style="background:${PALETTE.delivered}"></i>Delivered</span>
-        <span><i style="background:${PALETTE.plan}"></i>Plan</span>
-        <span><i style="background:${PALETTE.pending}"></i>Pending</span>
-      </div>
-      ${trendChart(dates, series)}`
-      + chapterClose()
-      + ledger(esc(cat) + " &mdash; daily history", fmt(rows.length) + " days",
-          `<th>Date</th><th class="n">Delivered</th><th class="n">Plan</th><th class="n">Pending</th>`,
-          body);
+function trendByDate(trend, line){
+  const rows = line === "All" ? (trend || []) : (trend || []).filter(r => String(r.tab) === line);
+  const map = {};
+  rows.forEach(r => {
+    const m = map[r.date] || (map[r.date] = { date:r.date, delivered:0, plan:0, pending:0 });
+    m.delivered += Number(r.delivered) || 0;
+    m.plan      += Number(r.plan) || 0;
+    m.pending   += Number(r.pending) || 0;
+  });
+  return Object.keys(map).map(k => map[k]).sort((a, b) => parseDMY(a.date) - parseDMY(b.date));
+}
+
+/* ---------------- overview ---------------- */
+function renderOverview(d){
+  const ds = d.deliveryStatus || [], sh = d.shortage || [];
+  const del = sum(ds, "delivered"), plan = sum(ds, "plan"), pend = sum(ds, "pending");
+  const att = pct(del, plan);
+  const shUnits = sum(sh, "qty");
+
+  const hist = trendByDate(d.trend, "All");
+  const prev = hist.length > 1 ? hist[hist.length - 2].delivered : null;
+  let deltaHTML = '<span class="delta flat">no prior day</span>';
+  if (prev !== null){
+    const diff = del - prev;
+    const cls = diff > 0 ? "up" : diff < 0 ? "down" : "flat";
+    const sign = diff > 0 ? "+" : "";
+    deltaHTML = '<span class="delta ' + cls + '">' + sign + fmt(diff) + '</span> vs previous day';
+  }
+  const attCls = att === null ? "" : att >= CONFIG.BAND_OK ? "ok" : att >= CONFIG.BAND_WARN ? "warn" : "bad";
+
+  $("kpis").innerHTML =
+    kpi("Delivered", fmt(del), deltaHTML, attCls === "bad" ? "bad" : "ok") +
+    kpi("Plan attainment", att === null ? "—" : Math.round(att * 100) + "%",
+        fmt(del) + " of " + fmt(plan) + " planned", attCls) +
+    kpi("Pending delivery", fmt(pend), "awaiting despatch", pend > 0 ? "warn" : "ok") +
+    kpi("Units short of stock", fmt(shUnits), sh.length + " line" + (sh.length === 1 ? "" : "s") + " affected",
+        sh.length ? "bad" : "ok");
+
+  /* per-line cards */
+  const ls = lines(ds);
+  $("lineCards").innerHTML = ls.map(L => {
+    const rows = ds.filter(r => String(r.tab) === L);
+    const dl = sum(rows, "delivered"), pl = sum(rows, "plan"), pd = sum(rows, "pending");
+    const r = pct(dl, pl);
+    const shRows = sh.filter(x => String(x.tab) === L);
+    const b = band(dl, pl);
+    const w = r === null ? 0 : Math.min(100, r * 100);
+    return '<div class="panel linecard">' +
+      '<div class="panel-hd"><h2>' + esc(L) + '</h2>' +
+      '<span class="sub">' + esc(CONFIG.LINE_DESC[L] || "") + '</span>' +
+      '<div class="right">' + pillHTML(b) + '</div></div>' +
+      '<div class="panel-bd">' +
+        '<div class="attain"><span class="p">' + (r === null ? "—" : Math.round(r * 100) + "%") + '</span>' +
+        '<span class="of">of plan</span></div>' +
+        '<div class="track"><i class="' + barClass(r) + '" style="width:' + w.toFixed(1) + '%"></i>' +
+          (r !== null && r > 1 ? '<span class="mark" style="left:' + (100 / r).toFixed(1) + '%"></span>' : '') +
+        '</div>' +
+        '<div class="trio">' +
+          '<div><div class="lbl">Delivered</div><div class="n g num">' + fmt(dl) + '</div></div>' +
+          '<div><div class="lbl">Plan</div><div class="n num">' + fmt(pl) + '</div></div>' +
+          '<div><div class="lbl">Pending</div><div class="n a num">' + fmt(pd) + '</div></div>' +
+        '</div>' +
+        '<div class="foot" style="margin-top:var(--s3);font-size:11px;color:var(--text-dim)">' +
+          rows.length + ' line' + (rows.length === 1 ? "" : "s") +
+          (shRows.length ? ' &middot; <span style="color:var(--bad)">' + shRows.length + ' short of stock</span>' : ' &middot; fully stocked') +
+        '</div>' +
+      '</div></div>';
+  }).join("");
+
+  /* overview chart: delivered vs plan, all lines, with under-plan days ringed */
+  const dates = hist.map(h => h.date);
+  const dv = hist.map(h => h.delivered), pv = hist.map(h => h.plan);
+  const flags = [];
+  hist.forEach((h, i) => { if (h.plan > 0 && h.delivered / h.plan < CONFIG.MISS_THRESHOLD) flags.push(i); });
+  $("trendRange").textContent = dates.length ? dates[0] + " → " + dates[dates.length - 1] +
+    (flags.length ? "  ·  " + flags.length + " day" + (flags.length === 1 ? "" : "s") + " under plan" : "") : "";
+  const ser = [
+    { key:"delivered", label:"Delivered", color:C.delivered, values:dv },
+    { key:"plan",      label:"Plan",      color:C.plan,      values:pv }
+  ];
+  $("ovLegend").innerHTML = legendHTML("ovLegend", ser, true);
+  if (dates.length) drawChart($("ovChartBox"), dates, ser,
+    { height:230, flags:flags, flagValues:dv, label:"Delivered versus plan over the last " + dates.length + " recorded days" });
+  else $("ovChartBox").innerHTML = '<div class="empty">Not enough history yet.</div>';
+
+  /* critical shortages */
+  const top = sh.slice().sort((a, b) => b.qty - a.qty).slice(0, 7);
+  $("ovShortMeta").textContent = sh.length ? "Top " + top.length + " of " + sh.length : "";
+  $("ovShort").innerHTML = top.length ? shortageBars(top, Math.max(1, ...sh.map(x => x.qty)))
+    : '<div class="empty">No stock shortages recorded.</div>';
+}
+
+function kpi(label, value, foot, cls){
+  return '<div class="kpi ' + (cls || "") + '"><div class="lbl">' + esc(label) + '</div>' +
+         '<div class="v">' + value + '</div><div class="foot">' + foot + '</div></div>';
+}
+
+function shortageBars(rows, scale){
+  return rows.map(r => {
+    const w = Math.max(3, (r.qty / scale) * 100);
+    const sev = r.qty >= scale * .66 ? "" : (r.qty >= scale * .33 ? "warn" : "low");
+    return '<div class="srow"><div class="nm"><b>' + esc(r.model) + '</b><span>' +
+      esc(r.tab) + ' &middot; ' + esc(r.color) + '</span></div>' +
+      '<div class="sbar"><i class="' + sev + '" style="width:' + w.toFixed(1) + '%"></i></div>' +
+      '<div class="q">' + fmt(r.qty) + '</div></div>';
   }).join("");
 }
 
-/* ------------------------------------------------------------------
-   DEMO PAYLOAD — served when the page is opened with ?demo=1.
-   Lets the layout be reviewed before the Web App URL is wired in.
-   These are illustrative figures, not plant data.
-------------------------------------------------------------------- */
-const DEMO_DATA = (function(){
-  const dates = [];
-  for (let d = 22; d <= 31; d++) dates.push(("0" + d).slice(-2) + "/08/2026");
-  for (let d = 1; d <= 4; d++)  dates.push("0" + d + "/09/2026");
-  const trend = [];
-  ["Summary", "IQUBE", "3W"].forEach(t => dates.forEach((d, i) => trend.push({
-    date: d, tab: t,
-    delivered: 300 + i * 17 + (t === "3W" ? 120 : 0) + (t === "Summary" ? 260 : 0),
-    plan:      380 + i * 12 + (t === "3W" ? 110 : 0) + (t === "Summary" ? 240 : 0),
-    pending:   Math.max(0, 80 - i * 2)
-  })));
-  return {
-    asOfDate: "04/09/2026",
-    generatedAt: new Date().toISOString(),
-    deliveryStatus: [
-      { tab:"Summary", model:"ALL MODELS",  color:"ALL",             delivered:4820, plan:5200, pending:380 },
-      { tab:"IQUBE",   model:"IQUBE ST",    color:"Titanium Grey",   delivered:1240, plan:1400, pending:160 },
-      { tab:"IQUBE",   model:"IQUBE S",     color:"Pearl White",     delivered:980,  plan:1000, pending:20  },
-      { tab:"IQUBE",   model:"IQUBE 2.2",   color:"Starlight Blue",  delivered:310,  plan:500,  pending:190 },
-      { tab:"IQUBE",   model:"IQUBE ST",    color:"Copper Bronze",   delivered:420,  plan:520,  pending:100 },
-      { tab:"3W",      model:"KING DURAMAX",color:"Yellow",          delivered:1500, plan:1600, pending:100 },
-      { tab:"3W",      model:"KING DELUXE", color:"Red",             delivered:790,  plan:700,  pending:0   },
-      { tab:"3W",      model:"KING DURAMAX",color:"Blue",            delivered:260,  plan:400,  pending:140 }
-    ],
-    shortage: [
-      { tab:"Summary", model:"ALL MODELS",  color:"ALL",            qty:340 },
-      { tab:"IQUBE",   model:"IQUBE 2.2",   color:"Starlight Blue", qty:190 },
-      { tab:"IQUBE",   model:"IQUBE ST",    color:"Copper Bronze",  qty:100 },
-      { tab:"IQUBE",   model:"IQUBE ST",    color:"Titanium Grey",  qty:60  },
-      { tab:"3W",      model:"KING DURAMAX",color:"Blue",           qty:140 },
-      { tab:"3W",      model:"KING DURAMAX",color:"Yellow",         qty:90  }
-    ],
-    trend: trend
-  };
-})();
+/* ---------------- delivery status ---------------- */
+function renderDelivery(){
+  const d = LAST; if (!d) return;
+  const all = d.deliveryStatus || [];
+  buildSeg($("delSeg"), ["All"].concat(lines(all)), S.del.line, v => { S.del.line = v; renderDelivery(); });
 
-/* ==================================================================
-   ANIMATION ENGINE
-   Preferred path: native CSS scroll-driven animations (animation-timeline).
-   Fallback path : IntersectionObserver scroll-reveal driving the same --r.
-   Numbers count up via requestAnimationFrame in both paths so that they
-   stay thousands-separated (CSS counters cannot format separators).
-   ================================================================== */
-const ROOT = document.documentElement;
-const NATIVE  = typeof CSS !== "undefined" && !!CSS.supports && CSS.supports("animation-timeline", "view()");
-const HAS_PROP = typeof CSS !== "undefined" && "registerProperty" in CSS;
-const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let rows = S.del.line === "All" ? all : all.filter(r => String(r.tab) === S.del.line);
+  const q = S.del.q.trim().toLowerCase();
+  if (q) rows = rows.filter(r => (r.model + " " + r.color).toLowerCase().indexOf(q) !== -1);
+  rows = sortRows(rows, S.del.sort, ["delivered", "plan", "pending"]);
 
-if (!NATIVE) ROOT.classList.add("fallback");
-if (!HAS_PROP) ROOT.classList.add("no-anim");
-document.body.classList.add("booting");
-
-function measureChrome(){
-  const m = document.querySelector(".masthead");
-  const t = document.querySelector(".tabrail");
-  if (!m || !t) return;
-  const mh = Math.round(m.getBoundingClientRect().height);
-  const th = Math.round(t.getBoundingClientRect().height);
-  ROOT.style.setProperty("--mast", mh + "px");
-  ROOT.style.setProperty("--chrome", (mh + th) + "px");
+  buildTable($("delTable"), [
+    { k:"tab",   t:"Line",   sort:true, cls:"dim",   v:r => esc(r.tab) },
+    { k:"model", t:"Model",  sort:true, cls:"model", v:r => esc(r.model) },
+    { k:"color", t:"Colour", sort:true, cls:"dim",   v:r => esc(r.color) },
+    { k:"delivered", t:"Delivered", sort:true, n:true, cls:"n", v:r => fmt(r.delivered) },
+    { k:"plan",      t:"Plan",      sort:true, n:true, cls:"n", v:r => fmt(r.plan) },
+    { k:"pending",   t:"Pending",   sort:true, n:true, cls:"n",
+      v:r => (r.pending > 0 ? '<span style="color:var(--warn)">' + fmt(r.pending) + "</span>" : fmt(r.pending)) },
+    { k:"att", t:"Attainment", n:true, cls:"n", v:r => {
+        const rr = pct(r.delivered, r.plan);
+        if (rr === null) return '<span style="color:var(--text-mute)">—</span>';
+        return '<div class="cellbar"><span class="b"><i class="' + barClass(rr) +
+          '" style="width:' + Math.min(100, rr * 100).toFixed(0) + '%"></i></span>' +
+          Math.round(rr * 100) + "%</div>";
+      } },
+    { k:"st", t:"Status", v:r => pillHTML(band(r.delivered, r.plan)) }
+  ], rows, S.del.sort);
 }
 
-/* ---- count-up ---- */
-function countUp(el){
-  const target = Number(el.dataset.count) || 0;
-  if (REDUCED || !HAS_PROP || target === 0){ el.textContent = fmt(target); return; }
-  const dur = 1150;
-  let t0 = null;
-  const ease = t => 1 - Math.pow(1 - t, 3);
-  function step(ts){
-    if (t0 === null) t0 = ts;
-    const p = Math.min(1, (ts - t0) / dur);
-    el.textContent = fmt(Math.round(target * ease(p)));
-    if (p < 1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
+/* ---------------- shortage ---------------- */
+function renderShortage(){
+  const d = LAST; if (!d) return;
+  const all = d.shortage || [];
+  buildSeg($("shSeg"), ["All"].concat(lines(all)), S.sh.line, v => { S.sh.line = v; renderShortage(); });
+
+  const rows = S.sh.line === "All" ? all : all.filter(r => String(r.tab) === S.sh.line);
+  const units = sum(rows, "qty");
+  const worst = rows.slice().sort((a, b) => b.qty - a.qty)[0];
+
+  $("shKpis").innerHTML =
+    kpi("Units short", fmt(units), "across " + (S.sh.line === "All" ? "all lines" : esc(S.sh.line)), rows.length ? "bad" : "ok") +
+    kpi("Lines affected", fmt(rows.length), "model / colour combinations", rows.length ? "warn" : "ok") +
+    kpi("Worst line", worst ? fmt(worst.qty) : "0", worst ? esc(worst.model) + " · " + esc(worst.color) : "nothing short", worst ? "bad" : "ok") +
+    kpi("Share of top line", worst && units ? Math.round(worst.qty / units * 100) + "%" : "—", "of the shortfall in one line", "warn");
+
+  const scale = Math.max(1, ...rows.map(r => r.qty));
+  const ranked = rows.slice().sort((a, b) => b.qty - a.qty);
+  $("shBars").innerHTML = ranked.length ? shortageBars(ranked, scale)
+    : '<div class="empty">No stock shortages recorded for this line.</div>';
+
+  buildTable($("shTable"), [
+    { k:"tab",   t:"Line",   sort:true, cls:"dim",   v:r => esc(r.tab) },
+    { k:"model", t:"Model",  sort:true, cls:"model", v:r => esc(r.model) },
+    { k:"color", t:"Colour", sort:true, cls:"dim",   v:r => esc(r.color) },
+    { k:"qty",   t:"Units short", sort:true, n:true, cls:"n",
+      v:r => '<span style="color:var(--bad);font-weight:600">' + fmt(r.qty) + "</span>" },
+    { k:"pc", t:"Share", n:true, cls:"n dim", v:r => units ? Math.round(r.qty / units * 100) + "%" : "—" }
+  ], sortRows(rows, S.sh.sort, ["qty"]), S.sh.sort);
 }
 
-/* ---- observers ---- */
-let countObs = null, revealObs = null;
+/* ---------------- trend ---------------- */
+function renderTrend(){
+  const d = LAST; if (!d) return;
+  buildSeg($("trSeg"), ["All"].concat(lines(d.trend)), S.tr.line, v => { S.tr.line = v; renderTrend(); });
 
-function initObservers(){
-  if (countObs) countObs.disconnect();
-  if (revealObs) revealObs.disconnect();
-
-  countObs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      countObs.unobserve(e.target);
-      countUp(e.target);
-    });
-  }, { threshold: 0.2 });
-
-  if (!NATIVE && !REDUCED && HAS_PROP){
-    revealObs = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        /* reveal on entry, and immediately for anything already scrolled past */
-        if (e.isIntersecting || e.boundingClientRect.top < 0){
-          e.target.classList.add("in");
-          revealObs.unobserve(e.target);
-        }
-      });
-    }, { rootMargin: "0px 0px -10% 0px", threshold: 0.05 });
-  }
-}
-
-function observeAll(scope){
-  scope.querySelectorAll("[data-count]").forEach(el => countObs.observe(el));
-  if (revealObs) scope.querySelectorAll(".r").forEach(el => revealObs.observe(el));
-}
-
-/* polyline lengths feed the stroke-dashoffset draw-in */
-function measureSparks(){
-  document.querySelectorAll("svg.trend .spark").forEach(p => {
-    let L = 0;
-    try { L = p.getTotalLength(); } catch (err) { L = 0; }
-    p.style.setProperty("--len", (L || 2000).toFixed(1));
-  });
-}
-
-/* ---- hero entrance (time-based; heroes sit outside any chapter timeline) ---- */
-function playHero(view){
-  const hero = document.querySelector('.hero[data-hero="' + view + '"]');
-  if (!hero) return;
-  const els = hero.querySelectorAll(".hr");
-  els.forEach(e => e.classList.remove("in"));
-  void hero.offsetWidth;
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    els.forEach(e => e.classList.add("in"));
+  const hist = trendByDate(d.trend, S.tr.line);
+  const dates = hist.map(h => h.date);
+  const ser = [
+    { key:"delivered", label:"Delivered", color:C.delivered, values:hist.map(h => h.delivered), visible:S.tr.series.delivered },
+    { key:"plan",      label:"Plan",      color:C.plan,      values:hist.map(h => h.plan),      visible:S.tr.series.plan },
+    { key:"pending",   label:"Pending",   color:C.pending,   values:hist.map(h => h.pending),   visible:S.tr.series.pending }
+  ];
+  const lg = $("trLegend");
+  lg.innerHTML = legendHTML("trLegend", ser);
+  lg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.k;
+    const on = Object.keys(S.tr.series).filter(x => S.tr.series[x]);
+    if (S.tr.series[k] && on.length === 1) return;   /* keep at least one series */
+    S.tr.series[k] = !S.tr.series[k];
+    renderTrend();
   }));
+
+  if (dates.length) drawChart($("trChartBox"), dates, ser,
+    { height:300, label:"Delivered, plan and pending over " + dates.length + " recorded days" });
+  else $("trChartBox").innerHTML = '<div class="empty">Not enough history yet.</div>';
+
+  const st = { key:null, dir:-1, redraw:() => {} };
+  buildTable($("trTable"), [
+    { k:"date", t:"Date", cls:"model", v:r => esc(r.date) },
+    { k:"delivered", t:"Delivered", n:true, cls:"n", v:r => fmt(r.delivered) },
+    { k:"plan",      t:"Plan",      n:true, cls:"n", v:r => fmt(r.plan) },
+    { k:"pending",   t:"Pending",   n:true, cls:"n", v:r => fmt(r.pending) },
+    { k:"att", t:"Attainment", n:true, cls:"n", v:r => {
+        const rr = pct(r.delivered, r.plan);
+        if (rr === null) return '<span style="color:var(--text-mute)">—</span>';
+        return '<div class="cellbar"><span class="b"><i class="' + barClass(rr) +
+          '" style="width:' + Math.min(100, rr * 100).toFixed(0) + '%"></i></span>' + Math.round(rr * 100) + "%</div>";
+      } },
+    { k:"st", t:"Status", v:r => pillHTML(band(r.delivered, r.plan)) }
+  ], hist.slice().reverse(), st);
 }
 
-/* ---- tabs ---- */
-const TABS = Array.prototype.slice.call(document.querySelectorAll(".tabbtn"));
-let current = "status";
-
-function activate(view, moveFocus){
-  current = view;
-  TABS.forEach(b => b.setAttribute("aria-selected", String(b.dataset.view === view)));
-  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + view));
-  window.scrollTo(0, 0);
-  playHero(view);
-  if (moveFocus){
-    const btn = TABS.filter(b => b.dataset.view === view)[0];
-    if (btn) btn.focus();
-  }
+/* ---------------- master render ---------------- */
+function render(d){
+  LAST = d;
+  $("boot").hidden = true;
+  $("asOf").textContent = d.asOfDate || "—";
+  const sc = $("shortCnt");
+  sc.textContent = (d.shortage || []).length;
+  sc.className = "cnt" + ((d.shortage || []).length ? " alert" : "");
+  $("stamp").textContent = d.generatedAt ? "Feed generated " + new Date(d.generatedAt).toLocaleString() : "";
+  renderOverview(d);
+  renderDelivery();
+  renderShortage();
+  renderTrend();
 }
 
-TABS.forEach(b => b.addEventListener("click", () => activate(b.dataset.view)));
-document.querySelector(".tabrail-in").addEventListener("keydown", e => {
+/* ---------------- tabs ---------------- */
+const TABS = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+let current = "overview";
+function show(v, focus){
+  current = v;
+  TABS.forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === v)));
+  document.querySelectorAll(".view").forEach(s => { s.hidden = (s.id !== "v-" + v); });
+  if (focus){ const b = TABS.filter(t => t.dataset.v === v)[0]; if (b) b.focus(); }
+  if (LAST) render(LAST);   /* charts need a laid-out container to size against */
+}
+TABS.forEach(t => t.addEventListener("click", () => show(t.dataset.v)));
+document.querySelector(".nav-in").addEventListener("keydown", e => {
   if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
   e.preventDefault();
-  const i = TABS.map(b => b.dataset.view).indexOf(current);
+  const i = TABS.map(t => t.dataset.v).indexOf(current);
   const j = e.key === "ArrowRight" ? (i + 1) % TABS.length : (i - 1 + TABS.length) % TABS.length;
-  activate(TABS[j].dataset.view, true);
+  show(TABS[j].dataset.v, true);
 });
 
-/* ---- status badge + states ---- */
-function setLive(state){
-  const b = document.getElementById("liveBadge");
-  const t = document.getElementById("liveTxt");
-  b.classList.remove("stale", "err");
-  if (state === "ok"){ t.textContent = "Live"; }
-  else if (state === "stale"){ b.classList.add("stale"); t.textContent = "Stale"; }
-  else { b.classList.add("err"); t.textContent = "Offline"; }
+$("delSearch").addEventListener("input", e => { S.del.q = e.target.value; renderDelivery(); });
+
+/* ---------------- clock ---------------- */
+function tick(){
+  const n = new Date();
+  $("clock").textContent = String(n.getHours()).padStart(2, "0") + ":" + String(n.getMinutes()).padStart(2, "0");
+}
+tick(); setInterval(tick, 20000);
+
+/* ---------------- status + states ---------------- */
+function setLive(state, txt){
+  const c = $("liveChip");
+  c.className = "chip " + (state === "ok" ? "live" : state === "warn" ? "warn" : "bad");
+  $("liveTxt").textContent = txt;
+}
+function showState(title, msg, code){
+  $("boot").hidden = false;
+  document.querySelectorAll(".view").forEach(s => { s.hidden = true; });
+  $("boot").innerHTML = '<div class="state"><h3>' + esc(title) + "</h3><p>" + esc(msg) + "</p>" +
+    (code ? "<code>" + esc(code) + "</code>" : "") + "</div>";
 }
 
-function showState(kicker, title, msg, code){
-  document.body.classList.add("booting");
-  document.getElementById("bootState").innerHTML =
-    '<div class="box"><div class="k">' + esc(kicker) + '</div><h4>' + esc(title) + '</h4>' +
-    '<p>' + esc(msg) + '</p>' + (code ? '<code>' + esc(code) + '</code>' : '') + '</div>';
-}
-
-/* ---- render ---- */
-function renderAll(data){
-  const wasBooting = document.body.classList.contains("booting");
-  const y = window.scrollY;
-
-  ["status", "shortage", "trend"].forEach(v => {
-    const hero = document.querySelector('.hero[data-hero="' + v + '"]');
-    if (hero) hero.innerHTML = buildHero(v, data);
-  });
-  document.getElementById("story-status").innerHTML   = buildStatusStory(data);
-  document.getElementById("story-shortage").innerHTML = buildShortageStory(data);
-  document.getElementById("story-trend").innerHTML    = buildTrendStory(data);
-
-  document.getElementById("asOfDate").textContent = data.asOfDate || "—";
-  document.getElementById("footStamp").textContent = data.generatedAt
-    ? "Generated " + new Date(data.generatedAt).toLocaleString()
-    : "Source: Delivery Status Raw";
-
-  document.body.classList.remove("booting");
-  measureChrome();
-  measureSparks();
-  initObservers();
-  observeAll(document);
-  playHero(current);
-
-  /* a background refresh should not yank the reader back to the top */
-  if (!wasBooting) window.scrollTo(0, y);
-}
-
-/* ---- fetch loop ---- */
-let lastSig = null;
-
-const DEMO_MODE = /[?&]demo=1/.test(window.location.search);
-
-async function load(){
-  if (DEMO_MODE){
-    const b = document.getElementById("liveBadge");
-    b.classList.add("demo");
-    document.getElementById("liveTxt").textContent = "Demo data";
-    if (lastSig === null){ lastSig = "demo"; renderAll(DEMO_DATA); }
-    return;
-  }
-  if (!CONFIG.WEBAPP_URL || CONFIG.WEBAPP_URL.indexOf("PASTE_") === 0){
-    setLive("err");
-    showState("Setup required", "Web App URL not set",
-      "Open index.html and replace WEBAPP_URL in the CONFIG block with the Apps Script deployment URL for this sheet (it ends in /exec). To preview the layout with sample figures, add ?demo=1 to this page's address.",
-      'WEBAPP_URL: "https://script.google.com/macros/s/AKfy.../exec"');
-    return;
-  }
+/* ---------------- fetch ---------------- */
+let sig = null, busy = false;
+async function load(manual){
+  if (busy) return;
+  busy = true;
+  if (manual) $("refreshBtn").style.opacity = .4;
   try {
-    const res = await fetch(CONFIG.WEBAPP_URL, { cache: "no-store" });
+    const res = await fetch(CONFIG.WEBAPP_URL + "?t=" + Date.now(), { cache:"no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
-    setLive("ok");
-    const sig = JSON.stringify([data.asOfDate, data.deliveryStatus, data.shortage, data.trend]);
-    if (sig === lastSig) return;   /* unchanged: leave the page alone */
-    lastSig = sig;
-    renderAll(data);
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+    setLive("ok", "Live");
+    const s = JSON.stringify([d.asOfDate, d.deliveryStatus, d.shortage, d.trend]);
+    if (s !== sig){ sig = s; render(d); }
   } catch (err){
-    setLive("err");
-    if (!lastSig){
-      showState("Connection failed", "Could not load delivery data",
-        'The dashboard could not reach the Apps Script Web App. Check that the deployment is still active and set to "Anyone" access, and that the URL in CONFIG is the current one.',
-        String(err));
-    }
+    setLive("bad", "Offline");
+    if (!sig) showState("Could not load plant data",
+      "The board could not reach the Apps Script Web App. Check the deployment is active and set to Anyone access.", String(err));
+  } finally {
+    busy = false;
+    $("refreshBtn").style.opacity = 1;
   }
 }
+$("refreshBtn").addEventListener("click", () => load(true));
 
-/* ---- boot ---- */
-measureChrome();
-window.addEventListener("resize", measureChrome, { passive: true });
-if ("ResizeObserver" in window){
-  new ResizeObserver(measureChrome).observe(document.querySelector(".masthead"));
-}
+/* ---------------- boot ---------------- */
+try {
+  const t = localStorage.getItem(THEME_KEY);
+  if (t) document.documentElement.setAttribute("data-theme", t);
+} catch (e) {}
+show("overview");
 load();
 setInterval(load, CONFIG.REFRESH_MS);
 </script>

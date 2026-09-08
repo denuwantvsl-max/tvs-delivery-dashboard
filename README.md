@@ -1,121 +1,106 @@
-# TVS Lanka — Delivery & Stock Dashboard
+# TVS Lanka — Horana Delivery & Stock Control Board
 
-Live delivery and stock-shortage dashboard for the **Horana Assembly Complex**.
-A single self-contained `index.html` (no build step, no CDNs — the plant network
-blocks external hosts) that reads JSON from a Google Apps Script Web App.
+Live delivery and stock-shortage board for the **Horana Assembly Complex**.
+A single self-contained `index.html` — no build step, no CDNs, no external
+requests of any kind (the plant network blocks external hosts) — reading JSON
+from a Google Apps Script Web App.
+
+**Live:** https://denuwantvsl-max.github.io/tvs-delivery-dashboard/
 
 ---
 
 ## How the data flows
 
 ```
-Google Sheet tab "Delivery Status Raw"      <- daily Apps Script pipeline
-  Date | Tab | Model | Color | Metric | Value
-              |
-              v
-doGet() Web App  (dashboard-webapp-snippet.gs)
-  { asOfDate, generatedAt, deliveryStatus[], shortage[], trend[] }
-              |
-              v
-index.html  ->  GitHub Pages
+Gmail (daily reports)  ->  Apps Script pipeline (Code.gs)
+                                    |
+                                    v
+              Sheet tab "Delivery Status Raw"
+              Date | Tab | Model | Color | Metric | Value
+                                    |
+                              doGet() Web App
+        { asOfDate, generatedAt, deliveryStatus[], shortage[], trend[] }
+                                    |
+                                    v
+                      index.html  ->  GitHub Pages
 ```
 
-Metrics consumed from the raw tab:
+Metrics consumed:
 
 | Metric | Used by |
 | --- | --- |
-| `Delivered Qty` | Delivery Status, Trend |
-| `Delivery Plan` | Delivery Status, Trend |
-| `Pending Delivery` | Delivery Status, Trend |
+| `Delivered Qty` | Delivery status, trend |
+| `Delivery Plan` | Delivery status, trend |
+| `Pending Delivery` | Delivery status, trend |
 | `Stock N/A for Delivery Orders` | Shortage |
 
-`Tab` is the category axis — **Summary**, **IQUBE**, **3W**.
+### Product lines
 
----
+`Tab` is the product-line axis. **Verified 08/09/2026: the three tabs are
+mutually exclusive product lines with no shared models — `Summary` is not a
+roll-up.** Plant totals therefore sum all three.
 
-## Setup
-
-1. Deploy the Web App (already done, but for reference):
-   Apps Script → **Deploy → New deployment → Web app**,
-   *Execute as:* Me, *Who has access:* Anyone. Copy the `/exec` URL.
-2. Open `index.html`, find the `CONFIG` block near the top of `<script>`, and set:
-
-   ```js
-   WEBAPP_URL: "https://script.google.com/macros/s/AKfy.../exec",
-   ```
-
-3. Commit and push. GitHub Pages redeploys automatically.
-
-> If you change the Apps Script code later, use **Manage deployments → edit →
-> new version** so the same URL keeps working.
-
-### Preview without the URL
-
-Append `?demo=1` to the page address to render the full layout with illustrative
-sample figures. Useful for reviewing design changes offline. The status badge
-reads **Demo data** so it can never be mistaken for the real feed.
-
----
-
-## CONFIG reference
-
-| Key | Default | Purpose |
-| --- | --- | --- |
-| `WEBAPP_URL` | *(placeholder)* | Apps Script `/exec` endpoint |
-| `REFRESH_MS` | `300000` | Background refresh interval (5 min) |
-| `CATEGORY_ORDER` | `["Summary","IQUBE","3W"]` | Order chapters appear in; unlisted tabs fall to the end alphabetically |
-| `SUMMARY_TAB` | `"Summary"` | Name of the roll-up tab |
-| `TOTALS_FROM_SUMMARY` | `false` | See note below |
-| `TOP_N` | `6` | Rows shown in the pinned panel (the full set is always in the table beneath) |
-
-### `TOTALS_FROM_SUMMARY` — resolved 08/09/2026
-
-Despite its name, the **`Summary` tab is not a roll-up.** Checked against the
-live feed, the three tabs are mutually exclusive product lines with no shared
-models:
-
-| Tab | Models |
+| Tab | Contains |
 | --- | --- |
 | `Summary` | JUPITER, NTORQ, RAIDER 125, RONIN, RTR 160, SPORTELS 110, XL 100 iTouch (petrol 2W) |
 | `IQUBE` | IQUBE ELECTRIC 2.2, IQUBE ELECTRIC 3.4, ORBITER (electric) |
 | `3W` | 3 WHEEL, 3W EV (three-wheelers) |
 
-So the headline figures **sum all three tabs** (`TOTALS_FROM_SUMMARY: false`).
-Taking `Summary` alone would have under-reported the plant by the entire
-electric and three-wheeler output. Set this back to `true` only if a genuine
-roll-up tab is added later.
+---
+
+## The board
+
+Designed as a **plant control board**, not a marketing page: everything
+critical is visible without scrolling, then four views for drill-down.
+
+| View | Shows |
+| --- | --- |
+| **Overview** | 4 KPI tiles (delivered + day-on-day delta, plan attainment, pending, units short), one card per product line with attainment bar, delivered-vs-plan chart, top shortages |
+| **Delivery Status** | Every model/colour line — sortable on any column, filterable by line, searchable by model or colour, in-row attainment bars and status |
+| **Shortage** | Shortage KPIs, ranked bars by units short, full register with share-of-total |
+| **14-Day Trend** | Delivered / plan / pending over time, per line or combined, with a daily history table |
+
+### Interaction
+
+- **Sorting** — click (or Enter/Space on) any sortable column header.
+- **Filtering** — segmented control per product line, plus a search box on Delivery Status.
+- **Chart** — hover or focus and use left/right arrows for a crosshair readout; Esc dismisses. Days where delivered fell below 60% of plan are ringed **and** labelled `UNDER PLAN` in the tooltip.
+- **Theme** — light/dark toggle, remembered per browser. Dark is the default (suits a wall display); light is there for daylight desk use.
+- **Tabs** — ARIA tablist with left/right arrow navigation.
+- **Refresh** — every 5 minutes automatically, or the refresh button. The page only re-renders when the payload actually changed.
+
+### Design notes
+
+- **No scroll-jacking.** The previous version pinned each category to a full
+  viewport and animated on scroll. For operational data that buried the
+  numbers; this replaces it with a dense board at a dashboard spacing scale
+  (4-32px).
+- **Status is never colour alone** — every pill carries an icon and a word
+  (`On plan` / `Behind` / `Short` / `No plan`), so it survives greyscale
+  printing and colour-blindness.
+- **Tabular figures** everywhere via a monospace stack, so columns of numbers
+  align and are comparable at a glance.
+- **System fonts only.** The design guidance suggested Fira Sans/Code via
+  Google Fonts; that would be an external request, so the equivalent mood is
+  achieved with the system sans + system monospace stacks.
+- **Icons are inline SVG**, never emoji.
+- Responsive at 1440 / 1180 / 820 / 420px. Reduced-motion disables all
+  animation. Print stylesheet unhides every view.
 
 ---
 
-## Design / behaviour notes
+## CONFIG reference
 
-- **Structure.** The three tabs (Delivery Status / Shortage / Trend) are
-  preserved. Within each tab: a full-viewport hero (as-of date + three headline
-  stats), then one pinned full-viewport chapter per category, then a full data
-  table under each chapter so no row is ever hidden by the storytelling.
-- **Scroll engine.** Sections pin with `position: sticky` over a `300vh` runway.
-  Animation is driven by native **CSS scroll-driven animations**
-  (`animation-timeline: view()`, guarded by `@supports`). Where unsupported, an
-  `IntersectionObserver` fallback drives the *same* `--r` custom property, so
-  there is one set of visual rules rather than two.
-- **Counters.** Numbers count up via `requestAnimationFrame` in both paths —
-  CSS counters cannot render thousands separators.
-- **Charts.** Inline SVG; lines draw in via `stroke-dashoffset` bound to `--r`.
-- **Accessibility.** `prefers-reduced-motion: reduce` unpins every chapter,
-  disables all motion, and renders final values immediately. Tabs are a proper
-  ARIA tablist with arrow-key navigation.
-- **Refresh.** Every 5 minutes the feed is re-fetched, but the page only
-  re-renders if the payload actually changed — a background refresh never yanks
-  a reader back to the top.
+At the top of the `<script>` block in `index.html`:
 
-### Browser support
-
-| | Pinned scroll narrative | Count-up | Charts |
-| --- | --- | --- | --- |
-| Chrome / Edge 115+ | native scroll-driven | ✅ | ✅ |
-| Safari 26+ / Firefox 144+ | native scroll-driven | ✅ | ✅ |
-| Older evergreen browsers | IntersectionObserver reveal | ✅ | ✅ |
-| No `@property` support | static (content shown immediately) | ✅ | ✅ |
+| Key | Default | Purpose |
+| --- | --- | --- |
+| `WEBAPP_URL` | *(deployed /exec)* | Apps Script endpoint |
+| `REFRESH_MS` | `300000` | Background refresh interval |
+| `LINE_ORDER` | `["Summary","IQUBE","3W"]` | Display order; unlisted tabs sort to the end |
+| `LINE_DESC` | *(see file)* | Display-only subtitle per line |
+| `MISS_THRESHOLD` | `0.6` | Below this share of plan, a day is flagged on the chart |
+| `BAND_OK` / `BAND_WARN` | `1.0` / `0.8` | Row status bands |
 
 ---
 
@@ -123,10 +108,26 @@ roll-up tab is added later.
 
 | File | Purpose |
 | --- | --- |
-| `index.html` | The entire dashboard — markup, styles, engine |
-| `Code.gs` | **Canonical** full Apps Script pipeline, including `doGet()`. Paste this whole file into the Apps Script project. |
+| `index.html` | The entire board — markup, styles, engine, logo |
+| `Code.gs` | **Canonical** Apps Script pipeline including `doGet()`. Paste this whole file into the Apps Script project. |
+| `tvs-logo-mask.png` | Source alpha mask for the logo (embedded in `index.html` as a data URI and coloured with CSS, so it takes the brand blue or white as needed) |
 | `dashboard-webapp-snippet.gs` | Superseded feed-only excerpt, kept for reference |
-| `_previous-version.html.bak` | The plain tabbed dashboard this replaced |
+| `_previous-version.html.bak` | The original plain tabbed dashboard |
+
+---
+
+## Fixes carried in `Code.gs`
+
+Three bugs were found and fixed in the pipeline while wiring this up:
+
+1. **`getActiveSpreadsheet()` returned null** — the project is standalone, not
+   bound to the Sheet. Now opens by `TRACKING_SHEET_ID`.
+2. **Locale date swap** — the Sheet's locale is US (M/D/Y), so `"07/09/2026"`
+   was stored as *July 9*. Only dates with day <= 12 were affected. Column A is
+   now forced to text on write; `repairRawTabs()` repaired 1,779 existing rows.
+3. **Duplicate rows** — `clearRowsForDate` compared a `Date` cell to a string
+   and never matched, so re-runs appended instead of replacing. 412 duplicate
+   rows were removed.
 
 ---
 
@@ -136,10 +137,11 @@ All changes go through git — no manual uploads via the GitHub web UI.
 
 ```bash
 cd ~/tvs-delivery-dashboard
-# edit index.html
 git add -A
 git commit -m "Describe the change"
 git push
 ```
 
-GitHub Pages rebuilds within about a minute.
+GitHub Pages rebuilds within about a minute. If `Code.gs` changed, also
+re-paste it into Apps Script and use **Deploy → Manage deployments → edit →
+new version** so the `/exec` URL stays the same.
