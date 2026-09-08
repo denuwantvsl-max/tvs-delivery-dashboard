@@ -152,6 +152,22 @@ function normalizeDateKey(v) {
   return String(v).trim();
 }
 
+/**
+ * Forces column A (Date) to plain-text format.
+ *
+ * WHY: the tracking Sheet's locale is US (M/D/Y). Writing the string
+ * "07/09/2026" (7 September) into a date-formatted cell makes Sheets parse it
+ * as July 9 and store a Date object with day and month SWAPPED. Dates whose
+ * day is > 12 are invalid as US dates so they survive as text -- which is why
+ * only 03/09, 04/09 and 07/09 were corrupted while 21/08..31/08 were fine.
+ *
+ * Formatting the column as text ("@") makes Sheets store exactly what we
+ * write, so dd/MM/yyyy stays dd/MM/yyyy regardless of spreadsheet locale.
+ */
+function forceDateColumnText(sheet) {
+  sheet.getRange(1, 1, sheet.getMaxRows(), 1).setNumberFormat('@');
+}
+
 function convertAttachmentToTempSheet(attachment) {
   const file = Drive.Files.create(
     { name: 'TEMP_PARSE_' + new Date().getTime(), mimeType: MimeType.GOOGLE_SHEETS },
@@ -315,6 +331,7 @@ function writeVehicleStockRows(rows, reportDate) {
     sheet = ss.insertSheet(VEHICLE_STOCK_OUTPUT_TAB);
     sheet.appendRow(['Date', 'Model', 'Row Type', 'W/Order', 'Container No', 'Color', 'Qty', 'Remarks']);
   }
+  forceDateColumnText(sheet);
   clearRowsForDate(sheet, reportDate);
   if (rows.length === 0) return;
   const values = rows.map(r => [r.date, r.model, r.rowType, r.worder, r.container, r.color, r.qty, r.remarks]);
@@ -499,6 +516,7 @@ function writeDeliveryStatusRows(rows, reportDate) {
     sheet = ss.insertSheet(DELIVERY_STATUS_OUTPUT_TAB);
     sheet.appendRow(['Date', 'Tab', 'Model', 'Color', 'Metric', 'Value']);
   }
+  forceDateColumnText(sheet);
   clearRowsForDate(sheet, reportDate);
   if (rows.length === 0) return;
   const values = rows.map(r => [r.date, r.tab, r.model, r.color, r.metric, r.value]);
@@ -526,17 +544,59 @@ function clearRowsForDate(sheet, reportDate) {
 }
 
 /**
- * One-off repair: removes duplicate rows from both raw tabs, keeping the
- * first occurrence of each identical row. Run this ONCE from the editor to
- * clean up duplicates created before clearRowsForDate was fixed. Safe to
- * re-run; it logs how many rows it removed from each tab.
+ * Recovers the intended dd/MM/yyyy from a Date cell that Sheets created by
+ * mis-parsing a dd/MM/yyyy string under a US (M/D/Y) locale.
+ *
+ * The written string was "D/M/yyyy" but Sheets read it as "M/D/yyyy", so the
+ * stored month IS the intended day and the stored day IS the intended month.
+ * Swapping them back is exact, not a guess.
+ *
+ * Returns null when the cell cannot have come from that mis-parse (stored day
+ * > 12 could never be a month), so genuine dates are never silently rewritten.
  */
-function dedupeRawTabs() {
+function recoverSwappedDate(v) {
+  if (Object.prototype.toString.call(v) !== '[object Date]' || isNaN(v.getTime())) return null;
+  var intendedDay = v.getMonth() + 1;
+  var intendedMonth = v.getDate();
+  if (intendedMonth > 12) return null;
+  var pad = function (x) { return (x < 10 ? '0' : '') + x; };
+  return pad(intendedDay) + '/' + pad(intendedMonth) + '/' + v.getFullYear();
+}
+
+/**
+ * One-off repair for both raw tabs. Run ONCE from the editor.
+ *   1. Rewrites locale-swapped Date cells in column A back to correct
+ *      dd/MM/yyyy text (e.g. the Date "Jul 9 2026" becomes "07/09/2026").
+ *   2. Removes duplicate rows left behind while clearRowsForDate was broken,
+ *      keeping one copy of each identical row.
+ * Safe to re-run; logs what it changed in each tab.
+ */
+function repairRawTabs() {
   const ss = SpreadsheetApp.openById(TRACKING_SHEET_ID);
   [VEHICLE_STOCK_OUTPUT_TAB, DELIVERY_STATUS_OUTPUT_TAB].forEach(tabName => {
     const sheet = ss.getSheetByName(tabName);
     if (!sheet) { Logger.log(`${tabName}: tab not found, skipped.`); return; }
-    const values = sheet.getDataRange().getValues();
+
+    // Pass 1: un-swap corrupted Date cells, then lock the column to text so
+    // writing the corrected strings back cannot re-trigger the same parse.
+    let values = sheet.getDataRange().getValues();
+    let repaired = 0, skipped = 0;
+    const fixedCol = [];
+    for (let r = 1; r < values.length; r++) {
+      const recovered = recoverSwappedDate(values[r][0]);
+      if (recovered !== null) { fixedCol.push([recovered]); repaired++; }
+      else {
+        if (Object.prototype.toString.call(values[r][0]) === '[object Date]') skipped++;
+        fixedCol.push([normalizeDateKey(values[r][0])]);
+      }
+    }
+    forceDateColumnText(sheet);
+    if (fixedCol.length) sheet.getRange(2, 1, fixedCol.length, 1).setValues(fixedCol);
+    Logger.log(`${tabName}: repaired ${repaired} swapped date(s)` +
+               (skipped ? `, left ${skipped} unrecognised Date cell(s) alone` : ''));
+
+    // Pass 2: de-duplicate against the now-consistent dates.
+    values = sheet.getDataRange().getValues();
     const seen = {};
     let removed = 0;
     for (let r = values.length - 1; r >= 1; r--) {
